@@ -8,11 +8,12 @@ export default class Canvas {
     this.calculatePath(15);
     this.minOffset = 10;
   }
-  
+
+  /*
   calculatePath(r) {
-    let cmds = pathParser(this.originalPath, true);
+    let cmds = [...pathParser(this.originalPath, true)];
     let newCmds = [];
-    cmds = cmds
+    cmds
       // .filter(cmd => cmd.marker !== 'Z') // remove Z command
       .filter((el, i, arr) => { // filter out adjacent points with same values
         const nxt = i < arr.length - 1 ? arr[i + 1] : arr[0];
@@ -54,7 +55,7 @@ export default class Canvas {
         item.maxRadius = Math.min(prvSide, nxtSide);
         return item;
       })
-      .forEach((item) => {
+      .map((item) => {
         let prevPoint;
         let nextPoint;
         let largeArcFlag;
@@ -70,6 +71,7 @@ export default class Canvas {
 
         let offset;
 
+        // prevent arc crossing the next command
         if (r >= item.maxRadius) {
           r = item.maxRadius;
         }
@@ -135,15 +137,35 @@ export default class Canvas {
           case 'Q': // quadratic beziér: x1 y1, x y
           case 'T': // short quadratic beziér: x y
           case 'A': // arc: rx ry x-axis-rotation large-arc-flag sweep-flag x y
+          case 'Z': // close path
             newCmds.push(item);
             break;
         }
       }
     );
-    newCmds.push({
-      marker: 'Z',
-    });
-    console.log(this.el.id, newCmds)
     this.el.setAttribute('d', commandsToSvgPath(newCmds));
+  }
+  */
+}
+
+export function roundCorners(string, r) {
+  let cmds = [...pathParser(string, true)];
+  let subpaths = [];
+  let newCmds = [];
+
+  for(let i = 0; i < cmds.length; i++) {
+    // prepare path
+      // create specific commands
+      // split residual coordinates into new commands
+      // convert to absolute coordinates
+      // convert unidimensionals to lineTo
+      // remove duplicated adjacent coordinates (L, Z)
+      // split array into subpath arrays (everything between a mM and the next mM or zZ)
+    // calculate rounded corners
+      // get previous and next coordinates. save them in cmd
+      // set max radius for point, save it in cmd
+      // get angle between previous, current an next coordinates. save them in cmd
+      // add cC between adjacent non equal lL
+    // parse commands back into string and return
   }
 }
