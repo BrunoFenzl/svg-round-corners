@@ -21,9 +21,15 @@ export function pathParser(str, round) {
       ]);
     }, [])
     .reverse()
-    .map((cmd) => {
-      const values = cmd.chunk.match(digitRegEx);
-      const vals = values ? values.map(parseFloat) : [];
+    .map((cmd, i, arr) => {
+      let values = cmd.chunk.match(digitRegEx);
+      let vals = values ? values.map(parseFloat) : [];
+      
+      if (cmd.marker.toUpperCase() === 'Z') {
+        values = arr[i - 1].chunk.match(digitRegEx);
+        vals = values ? values.map(parseFloat) : [0, 0];
+      }
+
       // convert all relative values to absolute values
       return newCommand(cmd.marker, vals);
     })
@@ -42,16 +48,14 @@ export function pathParser(str, round) {
     return results;
 }
 
-function convertToAbsolute(el, elInd, arr) {
+function convertToAbsolute(el, index, arr) {
   // First is always absolute
   // only need to test lowercase (relative) commands
   if (el.marker === el.marker.toLowerCase()) {
     el.marker = el.marker.toUpperCase();
     // get previous item or zero if its the first coordinate
-    const prev = arr[elInd - 1] || { values: { x: 0, y: 0 } };
-    if (prev.marker && prev.marker.toLowerCase() === 'z') {
-      prev = arr[elInd - 2] || { values: { x: 0, y: 0 } };
-    }
+    const prev = arr[index - 1] || { values: { x: 0, y: 0 } };
+
     switch (el.marker) {
       case 'M': // move to x,y
       case 'L': // line to x,y
@@ -98,6 +102,7 @@ function newCommand(marker, values) {
   switch (marker.toUpperCase()) {
     case 'M': // move to x,y
     case 'L': // line to x,y
+    case 'Z': // close path
       v.x = values[0];
       v.y = values[1];
       break;
@@ -168,7 +173,7 @@ function removeUnidimensionals(el, elInd, arr) {
 export function commandsToSvgPath(cmds) {
   return cmds
     .map((cmd) => {
-      const d = cmd.marker === 'Z' ? '' : Object.keys(cmd.values).map(key => cmd.values[key]).join(',');
+      const d = Object.keys(cmd.values).map(key => cmd.values[key]).join(',');
       return `\n${cmd.marker} ${d}`;
     })
     .join(' ')
