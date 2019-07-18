@@ -48,7 +48,7 @@ export function pathParser(str, round) {
     return results;
 }
 
-function convertToAbsolute(el, index, arr) {
+export function convertToAbsolute(el, index, arr) {
   // First is always absolute
   // only need to test lowercase (relative) commands
   if (el.marker === el.marker.toLowerCase()) {
@@ -152,9 +152,9 @@ function newCommand(marker, values) {
   return cmd;
 }
 
-function removeUnidimensionals(el, elInd, arr) {
-  if (elInd > 0) {
-    const prev = arr[elInd - 1];
+export function removeUnidimensionals(el, index, arr) {
+  if (index > 0) {
+    const prev = arr[index - 1];
     switch (el.marker) {
       case 'H':
         el.marker = 'L'
@@ -168,6 +168,17 @@ function removeUnidimensionals(el, elInd, arr) {
   }
 
   return el;
+}
+
+export function removeEqualAdjacent(el, index, arr) {
+  const nxt = index < arr.length - 1 ? arr[index + 1] : arr[0];
+  // x or y needs to be different than the next one
+  return el.values.x !== nxt.values.x || el.values.y !== nxt.values.y;
+}
+
+export function chunkSubPaths(el, index, arr) {
+  return el.marker === 'M' ?
+    arr.splice(index, arr.findIndex((el, i) => el.marker === 'M' && i > index)) : false;
 }
 
 export function commandsToSvgPath(cmds) {

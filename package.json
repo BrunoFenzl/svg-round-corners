@@ -1,0 +1,28 @@
+{
+  "name": "svg-round-corners",
+  "version": "0.0.1",
+  "description": "A small library for rounding corners",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BrunoFenzl/svg-round-corners.git"
+  },
+  "keywords": [
+    "svg",
+    "round",
+    "corner",
+    "path"
+  ],
+  "author": "Bruno Fenzl",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/BrunoFenzl/svg-round-corners/issues"
+  },
+  "homepage": "https://github.com/BrunoFenzl/svg-round-corners#readme",
+  "devDependencies": {
+    "jest": "^24.8.0"
+  }
+}

@@ -1,4 +1,4 @@
-import { pathParser, getAngle, getAdjacentLength, getTangentLength, getOppositeLength, commandsToSvgPath, getDistance } from "./utils.js";
+import { pathParser, getAngle, getAdjacentLength, getTangentLength, getOppositeLength, commandsToSvgPath, getDistance, convertToAbsolute, removeUnidimensionals } from "./utils.js";
 
 export default class Canvas {
   constructor(el) {
@@ -149,18 +149,22 @@ export default class Canvas {
 }
 
 export function roundCorners(string, r) {
+  // create specific commands
   let cmds = [...pathParser(string, true)];
   let subpaths = [];
   let newCmds = [];
+  
+  cmds
+    // convert to absolute coordinates
+    .map(convertToAbsolute)
+    // convert unidimensionals (h,v) to lineTo
+    .map(removeUnidimensionals)
+    // remove duplicated adjacent coordinates (L, Z)
+    .filter(removeEqualAdjacent)
+    // split array into subpath arrays (everything between a mM and the next mM or zZ)
+    .filter(chunkSubPaths)
 
   for(let i = 0; i < cmds.length; i++) {
-    // prepare path
-      // create specific commands
-      // split residual coordinates into new commands
-      // convert to absolute coordinates
-      // convert unidimensionals to lineTo
-      // remove duplicated adjacent coordinates (L, Z)
-      // split array into subpath arrays (everything between a mM and the next mM or zZ)
     // calculate rounded corners
       // get previous and next coordinates. save them in cmd
       // set max radius for point, save it in cmd
