@@ -48,6 +48,10 @@ export function pathParser(str, round) {
     return results;
 }
 
+export function linkAdjacent(el, index, arr) {
+
+}
+
 export function convertToAbsolute(el, index, arr) {
   // First is always absolute
   // only need to test lowercase (relative) commands
@@ -152,7 +156,7 @@ function newCommand(marker, values) {
   return cmd;
 }
 
-export function removeUnidimensionals(el, index, arr) {
+export function convertHVToL(el, index, arr) {
   if (index > 0) {
     const prev = arr[index - 1];
     switch (el.marker) {
@@ -170,7 +174,7 @@ export function removeUnidimensionals(el, index, arr) {
   return el;
 }
 
-export function removeEqualAdjacent(el, index, arr) {
+export function removeOverlapped(el, index, arr) {
   const nxt = index < arr.length - 1 ? arr[index + 1] : arr[0];
   // x or y needs to be different than the next one
   return el.values.x !== nxt.values.x || el.values.y !== nxt.values.y;

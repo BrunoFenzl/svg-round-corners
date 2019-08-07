@@ -158,9 +158,9 @@ export function roundCorners(string, r) {
     // convert to absolute coordinates
     .map(convertToAbsolute)
     // convert unidimensionals (h,v) to lineTo
-    .map(removeUnidimensionals)
+    .map(convertHVToL)
     // remove duplicated adjacent coordinates (L, Z)
-    .filter(removeEqualAdjacent)
+    .filter(removeOverlapped)
     // split array into subpath arrays (everything between a mM and the next mM or zZ)
     .filter(chunkSubPaths)
 
