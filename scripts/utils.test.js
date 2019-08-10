@@ -5,6 +5,6 @@ import {
   chunkSubPaths,
 } from './utils';
 
-test('Should convert relative commands to absolute', () => {
-  expect('')
-})
+// test('should link adjacents', () => {
+//   expect('')
+// })
