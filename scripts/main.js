@@ -8,8 +8,12 @@ svgs.forEach(svg =>
   svg.setAttribute('data-original-d', svg.getAttribute('d'))
 );
 
+svgs.forEach(svg => 
+  svg.setAttribute('d', roundCorners(svg.getAttribute('data-original-d'), rangeSlider.value))
+)
+
 rangeSlider.addEventListener('input', () => 
   svgs.forEach(svg => 
-    svg.setAttribute('d', roundCorners(svg.getAttribute('data-original-d')))
+    svg.setAttribute('d', roundCorners(svg.getAttribute('data-original-d'), rangeSlider.value))
   )
 );

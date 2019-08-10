@@ -23,46 +23,108 @@ export function pathParser(str, round) {
     .reverse()
     .map((cmd, i, arr) => {
       let values = cmd.chunk.match(digitRegEx);
-      let vals = values ? values.map(parseFloat) : [];
-      
-      if (cmd.marker.toUpperCase() === 'Z') {
-        values = arr[i - 1].chunk.match(digitRegEx);
-        vals = values ? values.map(parseFloat) : [0, 0];
-      }
-
-      // convert all relative values to absolute values
+      let vals = values ? values.map(parseFloat) : [];      
       return newCommand(cmd.marker, vals);
     })
-    .filter(cmd => Object.keys(cmd.values).some(k => cmd.values[k] !== 0)) // remove relative points where all values are zero
     .map(convertToAbsolute)
-    .map(removeUnidimensionals)
+    .map(convertHVToL);
+    // .filter(cmd => Object.keys(cmd.values).some(k => cmd.values[k] !== 0)) // remove relative points where all values are zero
+  
+  // results = removeOverlapped(results);
     
-    if (round) {
-      results.forEach(el => 
-        Object.keys(el.values).forEach(key => 
-          el.values[key] = parseFloat(el.values[key].toFixed(3))
-        )
-      )
-    }
+  results = results
+    
+  if (round) {
+    results.forEach((el) => {
+      return Object.keys(el.values).forEach(key => 
+        el.values[key] = el.values[key] && parseFloat(el.values[key].toFixed(3))
+      )}
+    )
+  }
 
-    return results;
+  return results;
 }
 
-export function linkAdjacent(el, index, arr) {
+export function linkAdjacent(el, index, array) {
+  let prev = array[mod(index - 1, array.length)];
+  if (prev.marker.toLowerCase() === 'z') {
+    prev = array[mod(index - 2, array.length)];
+  }
+  el.previous = prev;
 
+  let next = array[mod(index + 1, array.length)];
+
+  if (next.marker.toLowerCase() === 'z') {
+    next = array[mod(index + 2, array.length)];
+  }
+  el.next = next;
+
+  console.log('adjacent', el.marker, prev, next);
+  return el;
+}
+
+export function removeOverlapped(array) {
+  const filtered = [array[0]];
+  let p = 0;
+  let current = array[p];
+
+  // recurse
+  function findNext(counter) {
+    const testnext = array[counter];
+    const overlap = Object.keys(testnext.values)
+      .every((key) => {
+        const diff = testnext.values[key] - current.values[key];
+        // This value less the previous should not be equal zero.
+        // If the difference is zero means they are at the same position
+        return diff === 0 || isNaN(diff);
+      });
+
+    if (overlap) {
+      counter = counter + 1;
+      if (counter >= array.length - 1) {
+        return array.length - 1;
+      } else {
+        findNext(counter);
+      }
+    } else {
+      return counter;
+    }
+  }
+
+  while (p < array.length - 1) {
+    const nextIndex = findNext(p + 1);
+    array[p].next = array[nextIndex];
+    current = array[nextIndex];
+    filtered.push(current);
+    p = nextIndex;
+  }
+
+  // last command needs to reference the first one to have a triangle
+  filtered[filtered.length - 1].next = filtered[0];
+  // filtered[filtered.length - 1].values = filtered[0].values;
+
+  return filtered;
 }
 
 export function convertToAbsolute(el, index, arr) {
+  // get previous item or last one if its the first coordinate
+  // const prev = index < 0 ? arr[arr.length - 1] : arr[index - 1];
+  let prev;
+
+  prev = arr[mod(index - 1, arr.length)];
+  // if (prev.marker.toLowerCase() === 'z') {
+  //   prev = arr[mod(index - 1, arr.length)];
+  // }
+
   // First is always absolute
   // only need to test lowercase (relative) commands
-  if (el.marker === el.marker.toLowerCase()) {
+  if (index !== 0 && el.marker === el.marker.toLowerCase()) {
+    // convert all to uppercase
     el.marker = el.marker.toUpperCase();
-    // get previous item or zero if its the first coordinate
-    const prev = arr[index - 1] || { values: { x: 0, y: 0 } };
-
     switch (el.marker) {
       case 'M': // move to x,y
       case 'L': // line to x,y
+      case 'A':
         el.values.x += prev.values.x;
         el.values.y += prev.values.y;
         break;
@@ -97,16 +159,21 @@ export function convertToAbsolute(el, index, arr) {
     }
   }
 
+  if (el.marker.toLowerCase() === 'z') {
+    el.values.x = prev.values.x;
+    el.values.y = prev.values.y;
+  }
+
+  console.log('absolute', el);
   return el;
 }
 
 function newCommand(marker, values) {
   let cmd = { marker, values: {} };
-  let v = cmd.values;
+  let v = cmd.values; // shortcut
   switch (marker.toUpperCase()) {
     case 'M': // move to x,y
     case 'L': // line to x,y
-    case 'Z': // close path
       v.x = values[0];
       v.y = values[1];
       break;
@@ -156,9 +223,13 @@ function newCommand(marker, values) {
   return cmd;
 }
 
+export function mod(x, m) {
+  return (x % m + m) % m;
+}
+
 export function convertHVToL(el, index, arr) {
   if (index > 0) {
-    const prev = arr[index - 1];
+    const prev = el.previous;
     switch (el.marker) {
       case 'H':
         el.marker = 'L'
@@ -174,12 +245,6 @@ export function convertHVToL(el, index, arr) {
   return el;
 }
 
-export function removeOverlapped(el, index, arr) {
-  const nxt = index < arr.length - 1 ? arr[index + 1] : arr[0];
-  // x or y needs to be different than the next one
-  return el.values.x !== nxt.values.x || el.values.y !== nxt.values.y;
-}
-
 export function chunkSubPaths(el, index, arr) {
   return el.marker === 'M' ?
     arr.splice(index, arr.findIndex((el, i) => el.marker === 'M' && i > index)) : false;
@@ -188,7 +253,10 @@ export function chunkSubPaths(el, index, arr) {
 export function commandsToSvgPath(cmds) {
   return cmds
     .map((cmd) => {
-      const d = Object.keys(cmd.values).map(key => cmd.values[key]).join(',');
+      let d = '';
+      if (cmd.marker.toLowerCase() !== 'z') {
+        d = Object.keys(cmd.values).map(key => cmd.values[key]).join(',');
+      }
       return `\n${cmd.marker} ${d}`;
     })
     .join(' ')
@@ -196,10 +264,12 @@ export function commandsToSvgPath(cmds) {
 }
 
 export function getAngle(p1, p2) {
+  // console.log('getAngle', p1, p2);
   return Math.atan2(p2.x - p1.x, p2.y - p1.y);
 }
 
 export function getDistance(p1, p2) {
+  // console.log('getDistance', p1, p2);
   const xDiff = p2.x - p1.x;
   const yDiff = p2.y - p1.y;
 
@@ -207,14 +277,17 @@ export function getDistance(p1, p2) {
 }
 
 export function getOppositeLength(angle, hip) {
+  // console.log('getOppositeLength', angle, hip);
   return Math.sin(angle) * hip;
 }
 
 export function getAdjacentLength(angle, hip) {
+  // console.log('getAdjacentLength', angle, hip);
   return Math.cos(angle) * hip;
 }
 
 export function getTangentLength(angle, opposite) {
+  // console.log('getTangentLength', angle, opposite);
   return opposite / Math.tan(angle);
 }
 

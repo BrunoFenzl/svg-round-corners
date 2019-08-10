@@ -1,4 +1,4 @@
-import { pathParser, getAngle, getAdjacentLength, getTangentLength, getOppositeLength, commandsToSvgPath, getDistance, convertToAbsolute, removeUnidimensionals } from "./utils.js";
+import { pathParser, getDistance, getAngle, getTangentLength, getOppositeLength, getAdjacentLength, commandsToSvgPath, linkAdjacent, mod } from "./utils.js";
 
 export default class Canvas {
   constructor(el) {
@@ -153,8 +153,144 @@ export function roundCorners(string, r) {
   let cmds = [...pathParser(string, true)];
   let subpaths = [];
   let newCmds = [];
-  
+
   cmds
+    .filter((el, index, array) => {
+      let next = array[mod(index + 1, array.length)];
+
+      if (next.marker.toLowerCase() === 'z') {
+        next = array[mod(index + 2, array.length)];
+      }
+      
+      return Object.keys(el.values).some((key) => {
+        if (el.marker.toLowerCase() === 'z') {
+          return true;
+        } else {
+          console.log(el.marker, key, Math.abs(next.values[key] - el.values[key]) > parseInt(r));
+          return Math.abs(next.values[key] - el.values[key]) !== 0; parseInt(r);
+        }
+      })
+    })
+    .map(linkAdjacent)
+    .map(el => {
+      console.log('filtered el', el);
+      return el;
+    })
+    .map((el, index, arr) => {
+      if (index === 0) { // first command
+        el.first = true;
+      } else if (index === arr.length - 1) { // last command
+        el.last = true;
+      }
+      
+      const nxtSide = getDistance({
+        x: el.values.x,
+        y: el.values.y,
+      },
+      {
+        x: el.next.values.x,
+        y: el.next.values.y,
+      }) / 2; // half way through between both points
+
+      const prvSide = getDistance({
+        x: el.values.x,
+        y: el.values.y,
+      },
+      {
+        x: el.previous.values.x,
+        y: el.previous.values.y,
+      }) / 2; // half way through between both points
+
+      el.maxRadius = Math.min(prvSide, nxtSide) / 2;
+      return el;
+    })
+    .map((el) => {
+      const largeArcFlag = 0;
+      let prevPoint;
+      let nextPoint;
+      let sweepFlag;
+
+      let prv = el.previous;
+      let nxt = el.next;
+
+      const anglePrv = getAngle(el.values, prv.values);
+      const angleNxt = getAngle(el.values, nxt.values);
+      
+      let angle = angleNxt - anglePrv;
+      
+      let offset;
+      
+      // prevent arc crossing the next command
+      if (r >= el.maxRadius) {
+        r = el.maxRadius || r;
+      }
+
+      if (Math.abs(angle) > Math.PI * 1.5) { // > 270°
+        angle = Math.PI * 2 - Math.abs(angle);
+      }
+
+      if (Math.abs(angle) < Math.PI/4 ) {
+        offset = getTangentLength(angle/2, r );
+        // largeArcFlag = 0;
+        sweepFlag = 1;
+      } else {
+        offset = getTangentLength(angle/2, -r);
+        // largeArcFlag = 0;
+        sweepFlag = 0;
+      }
+
+      prevPoint = [
+        el.values.x + getOppositeLength(anglePrv, offset),
+        el.values.y + getAdjacentLength(anglePrv, offset)
+      ];
+      
+      nextPoint = [
+        el.values.x + getOppositeLength(angleNxt, offset),
+        el.values.y + getAdjacentLength(angleNxt, offset)
+      ];
+
+      switch (el.marker.toUpperCase()) {
+        case 'M': // moveTo x,y
+        case 'L': // lineTo x,y
+          newCmds.push({
+            marker: el.marker,
+            values: {
+              x: prevPoint[0],
+              y: prevPoint[1],
+            }
+          });
+          // there only need be a curve if and only if the next marker is a corner
+          if (el.next.marker.toUpperCase() === 'L' || el.next.marker.toUpperCase() === 'M') {
+            newCmds.push({
+              marker: 'A',
+              values: {
+                radiusX: r,
+                radiusY: r,
+                rotation: angle * (180/Math.PI),
+                largeArc: largeArcFlag,
+                sweep: sweepFlag,
+                x: nextPoint[0],
+                y: nextPoint[1],
+              },
+            });
+          }
+          break;
+        
+        case 'H': // horizontal to x. Transformed to L in utils
+        case 'V': // vertical to y. Transformed to L in utils
+        case 'C': // cubic beziér: x1 y1, x2 y2, x y
+        case 'S': // short beziér: x2 y2, x y
+        case 'Q': // quadratic beziér: x1 y1, x y
+        case 'T': // short quadratic beziér: x y
+        case 'A': // arc: rx ry x-axis-rotation large-arc-flag sweep-flag x y
+        case 'Z': // close path
+          newCmds.push({ marker: el.marker, values: el.values });
+          break;
+      }
+    });
+  const newCommands = commandsToSvgPath(newCmds);
+  return newCommands;
+/*
     // convert to absolute coordinates
     .map(convertToAbsolute)
     // convert unidimensionals (h,v) to lineTo
@@ -163,7 +299,7 @@ export function roundCorners(string, r) {
     .filter(removeOverlapped)
     // split array into subpath arrays (everything between a mM and the next mM or zZ)
     .filter(chunkSubPaths)
-
+*/
     // calculate rounded corners
       // get previous and next coordinates. save them in cmd
       // set max radius for point, save it in cmd
