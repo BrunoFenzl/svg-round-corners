@@ -153,7 +153,7 @@ export function roundCorners(string, r) {
   let cmds = [...pathParser(string, true)];
   let subpaths = [];
   let newCmds = [];
-
+  
   cmds
     .filter((el, index, array) => {
       let next = array[mod(index + 1, array.length)];

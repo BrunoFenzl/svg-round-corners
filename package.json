@@ -4,7 +4,11 @@
   "description": "A small library for rounding corners",
   "main": "index.js",
   "scripts": {
+<<<<<<< HEAD
     "test": "jest"
+=======
+    "test": "test"
+>>>>>>> 654f1770479bad84ee84622c4951fe49680629fe
   },
   "repository": {
     "type": "git",
