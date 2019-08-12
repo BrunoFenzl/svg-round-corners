@@ -28,11 +28,6 @@ export function pathParser(str, round) {
     })
     .map(convertToAbsolute)
     .map(convertHVToL);
-    // .filter(cmd => Object.keys(cmd.values).some(k => cmd.values[k] !== 0)) // remove relative points where all values are zero
-  
-  // results = removeOverlapped(results);
-    
-  results = results
     
   if (round) {
     results.forEach((el) => {
@@ -45,65 +40,50 @@ export function pathParser(str, round) {
   return results;
 }
 
-export function linkAdjacent(el, index, array) {
-  let prev = array[mod(index - 1, array.length)];
-  if (prev.marker.toLowerCase() === 'z') {
-    prev = array[mod(index - 2, array.length)];
+export function getPreviousDiff(e, i, a) {
+  const counter = i - 1;
+  const p = a[mod(counter, a.length)];
+  console.log(
+    'getPrevious',
+    [e.marker, e.values.x, e.values.y],
+    [p.marker, p.values.x, p.values.y],
+  );
+
+  const isDiff = ['x', 'y'].some((key) => {
+    return Math.round(Math.abs(p.values[key] - e.values[key])) > 10;
+  });
+
+  if (isDiff) {
+    return p;
+  } else {
+    return getPreviousDiff(e, counter - 1, a);
   }
-  el.previous = prev;
-
-  let next = array[mod(index + 1, array.length)];
-
-  if (next.marker.toLowerCase() === 'z') {
-    next = array[mod(index + 2, array.length)];
-  }
-  el.next = next;
-
-  console.log('adjacent', el.marker, prev, next);
-  return el;
 }
 
-export function removeOverlapped(array) {
-  const filtered = [array[0]];
-  let p = 0;
-  let current = array[p];
-
-  // recurse
-  function findNext(counter) {
-    const testnext = array[counter];
-    const overlap = Object.keys(testnext.values)
-      .every((key) => {
-        const diff = testnext.values[key] - current.values[key];
-        // This value less the previous should not be equal zero.
-        // If the difference is zero means they are at the same position
-        return diff === 0 || isNaN(diff);
-      });
-
-    if (overlap) {
-      counter = counter + 1;
-      if (counter >= array.length - 1) {
-        return array.length - 1;
-      } else {
-        findNext(counter);
-      }
-    } else {
-      return counter;
-    }
+export function getNextDiff(e, i, a) {
+  const p = a[mod(i + 1, a.length)];
+/*
+  if (p.marker.toLowerCase() === 'z') {
+    return getNextDiff(e, i + 1, a);
   }
-
-  while (p < array.length - 1) {
-    const nextIndex = findNext(p + 1);
-    array[p].next = array[nextIndex];
-    current = array[nextIndex];
-    filtered.push(current);
-    p = nextIndex;
+*/
+  
+  const isDiff = ['x', 'y'].some((key) => {
+    return Math.round(Math.abs(p.values[key] - e.values[key])) > 10;
+  });
+  if (isDiff) {
+    return p;
+  } else {
+    return getNextDiff(e, i + 1, a);
   }
+}
 
-  // last command needs to reference the first one to have a triangle
-  filtered[filtered.length - 1].next = filtered[0];
-  // filtered[filtered.length - 1].values = filtered[0].values;
+export function linkAdjacent(el, index, array) {  
+  el.previous = getPreviousDiff(el, index, array);
+  el.next = getNextDiff(el, index, array);
 
-  return filtered;
+  // console.log('adjacent', el.marker, index, el.previous, el.next);
+  return el;
 }
 
 export function convertToAbsolute(el, index, arr) {
@@ -164,7 +144,6 @@ export function convertToAbsolute(el, index, arr) {
     el.values.y = prev.values.y;
   }
 
-  console.log('absolute', el);
   return el;
 }
 
@@ -245,9 +224,53 @@ export function convertHVToL(el, index, arr) {
   return el;
 }
 
+export function addMaxRadius(el) {
+  const nxtSide = getDistance({
+    x: el.values.x,
+    y: el.values.y,
+  },
+  {
+    x: el.next.values.x,
+    y: el.next.values.y,
+  }) / 2; // half way through between both points
+
+  const prvSide = getDistance({
+    x: el.values.x,
+    y: el.values.y,
+  },
+  {
+    x: el.previous.values.x,
+    y: el.previous.values.y,
+  }) / 2; // half way through between both points
+
+  el.maxRadius = Math.min(prvSide, nxtSide) / 2;
+  return el;
+}
+
+export function removeOverlapped(el, index, array) {
+  let previous = array[mod(index - 1, array.length)];
+  // console.log('L', el.marker);
+  // ...so skip the first moveTo command and any other that's not a lineTo
+  if (index === 0 || el.marker.toUpperCase() !== 'L') {
+    return true;
+  }
+  // it seems we have a lineTo here. Get the immediate previous
+  // command to check if the x, y coordinates overlap
+  // If any of x or y are different, we may draw a curve here so all good!
+  const diffPrev = ['x', 'y'].some((key) => {
+    return Math.round(Math.abs(previous.values[key] - el.values[key])) !== 0;
+  });
+
+  // const diffNext = ['x', 'y'].some((key) => {
+  //   return Math.round(Math.abs(next.values[key] - el.values[key])) !== 0;
+  // })
+  return diffPrev;
+}
+
 export function chunkSubPaths(el, index, arr) {
-  return el.marker === 'M' ?
-    arr.splice(index, arr.findIndex((el, i) => el.marker === 'M' && i > index)) : false;
+  return el.marker.toUpperCase() === 'M' ?
+    arr.splice(index, arr.findIndex((el, i) => el.marker.toUpperCase() === 'M' && i > index)) :
+    false;
 }
 
 export function commandsToSvgPath(cmds) {
