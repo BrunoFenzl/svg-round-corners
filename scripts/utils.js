@@ -228,7 +228,7 @@ export function addMaxRadius(el) {
   {
     x: el.next.values.x,
     y: el.next.values.y,
-  }) / 2; // half way through between both points
+  }); // half way through between both points
 
   const prvSide = getDistance({
     x: el.values.x,
@@ -237,9 +237,10 @@ export function addMaxRadius(el) {
   {
     x: el.previous.values.x,
     y: el.previous.values.y,
-  }) / 2; // half way through between both points
+  }); // half way through between both points
 
   el.maxRadius = Math.min(prvSide, nxtSide) / 2;
+  console.log('prvSide, nxtSide', prvSide, nxtSide);
   return el;
 }
 
