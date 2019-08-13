@@ -26,8 +26,7 @@ export function pathParser(str, round) {
       let vals = values ? values.map(parseFloat) : [];      
       return newCommand(cmd.marker, vals);
     })
-    .map(convertToAbsolute)
-    .map(convertHVToL);
+    .map(convertToAbsolute);
     
   if (round) {
     results.forEach((el) => {
@@ -43,12 +42,7 @@ export function pathParser(str, round) {
 export function getPreviousDiff(e, i, a) {
   const counter = i - 1;
   const p = a[mod(counter, a.length)];
-  console.log(
-    'getPrevious',
-    [e.marker, e.values.x, e.values.y],
-    [p.marker, p.values.x, p.values.y],
-  );
-
+  
   const isDiff = ['x', 'y'].some((key) => {
     return Math.round(Math.abs(p.values[key] - e.values[key])) > 10;
   });
@@ -158,8 +152,10 @@ function newCommand(marker, values) {
       break;
     case 'H': // horizontal to x
       v.x = values[0];
+      v.y = null;
       break;
     case 'V': // vertical to y
+      v.x = null;
       v.y = values[0];
       break;
     case 'C': // cubic beziér curve x1 y1, x2 y2, x y
@@ -206,7 +202,7 @@ export function mod(x, m) {
   return (x % m + m) % m;
 }
 
-export function convertHVToL(el, index, arr) {
+export function convertHVToL(el, index) {
   if (index > 0) {
     const prev = el.previous;
     switch (el.marker) {
@@ -216,7 +212,7 @@ export function convertHVToL(el, index, arr) {
         break;
       case 'V':
         el.marker = 'L'
-        el.values = prev.values.x;
+        el.values.x = prev.values.x;
         break;
     }
   }
