@@ -1,4 +1,4 @@
-import { pathParser, getDistance, getAngle, getTangentLength, getOppositeLength, getAdjacentLength, commandsToSvgPath, linkAdjacent, mod, chunkSubPaths, removeOverlapped, addMaxRadius } from "./utils.js";
+import { pathParser, getDistance, getAngle, getTangentLength, getOppositeLength, getAdjacentLength, commandsToSvgPath, linkAdjacent, mod, chunkSubPaths, removeOverlapped, addMaxRadius, convertHVToL } from "./utils.js";
 
 export function roundCorners(string, r) {
   // create specific commands
@@ -20,6 +20,7 @@ export function roundCorners(string, r) {
       // overlapping or having really, really near coordinates
       .filter(removeOverlapped)
       .map(linkAdjacent)
+      .map(convertHVToL)
       .map(addMaxRadius)
       .map((el) => {
         const largeArcFlag = 0;
@@ -45,17 +46,51 @@ export function roundCorners(string, r) {
         if (Math.abs(angle) > Math.PI * 1.5) { // > 270°
           angle = Math.PI * 2 - Math.abs(angle); // flip side with 180°
         }
-
-        if (Math.abs(angle) <= Math.PI/4 ) { // less than or equal 90° meaning sharp to right angle
+        const degreeAngle = angle * (180/Math.PI);
+/*
+        if (degreeAngle <= -270 ) {
           offset = getTangentLength(angle/2, r );
-          // largeArcFlag = 0;
           sweepFlag = 1;
+          // console.log(`${degreeAngle} <= -270`);
+        } else if (degreeAngle > -270 && degreeAngle < -90 ) {
+          offset = getTangentLength(angle/2, -r );
+          sweepFlag = 0;
+          // console.log(`-270 < ${degreeAngle} < -90`);
+        } else if (degreeAngle === -90) {
+          offset = getTangentLength(angle/2, -r); // obtuse angle
+          sweepFlag = 0;
+          // console.log(`${degreeAngle} === -90`);
+        } else if (degreeAngle > -90 && degreeAngle <= 0) {
+          offset = getTangentLength(angle/2, -r);
+          sweepFlag = 0;
+          // console.log(`-90 < ${degreeAngle} <= 0`);
+        } else if (degreeAngle > 0 && degreeAngle < 90) {
+          offset = getTangentLength(angle/2, r );
+          sweepFlag = 1;
+          // console.log(`0 < ${degreeAngle} < 90`);
+        } else if (degreeAngle === 90) {
+          offset = getTangentLength(angle/2, r); // obtuse angle
+          sweepFlag = 1;
+          // console.log(`${degreeAngle} === 90`);
+        } else if (degreeAngle > 90 && degreeAngle < 270) {
+          offset = getTangentLength(angle/2, -r); // obtuse angle
+          sweepFlag = 0;
+          // console.log(`90 < ${degreeAngle} < 270`);
         } else {
           offset = getTangentLength(angle/2, -r); // obtuse angle
-          // largeArcFlag = 0;
+          sweepFlag = 0;
+          // console.log(`270 <= ${degreeAngle}`);
+        }
+*/
+
+        if ( degreeAngle <= -270 || (degreeAngle > 0 && degreeAngle <= 90) ) {
+          offset = getTangentLength(angle/2, r );
+          sweepFlag = 1;
+        } else if ( (degreeAngle > -270 && degreeAngle <= 0) || degreeAngle > 90 ) {
+          offset = getTangentLength(angle/2, -r );
           sweepFlag = 0;
         }
-
+        
         prevPoint = [
           el.values.x + getOppositeLength(anglePrv, offset),
           el.values.y + getAdjacentLength(anglePrv, offset)
