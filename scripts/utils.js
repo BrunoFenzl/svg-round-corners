@@ -41,6 +41,10 @@ export function roundValues(cmds, round) {
 export function getPreviousDiff(e, i, a) {
   const counter = i - 1;
   const p = a[mod(counter, a.length)];
+
+  if (p.marker === 'M') {
+    return a[a.length - 1]; // return z
+  }
   
   const isDiff = ['x', 'y'].some((key) => {
     return Math.round(Math.abs(p.values[key] - e.values[key])) > 10;
@@ -55,19 +59,22 @@ export function getPreviousDiff(e, i, a) {
 
 export function getNextDiff(e, i, a) {
   const counter = i + 1;
-  const p = a[mod(counter, a.length)];
-  console.log('next', p)
+  const next = a[mod(counter, a.length)];
+  
+  if (e.marker === 'Z') {
+    return a[0]; // return m
+  }
 
-  if (p.marker === 'Z') {
-    return a[0];
+  if (next.marker === 'Z') {
+    return next; // return m
   }
 
   const isDiff = ['x', 'y'].some((key) => {
-    return Math.round(Math.abs(p.values[key] - e.values[key])) !== 0;
+    return Math.round(Math.abs(next.values[key] - e.values[key])) !== 0;
   });
 
   if (isDiff) {
-    return p;
+    return next;
   } else {
     return getNextDiff(e, counter + 1, a);
   }
@@ -283,12 +290,10 @@ export function commandsToSvgPath(cmds) {
 }
 
 export function getAngle(p1, p2) {
-  // console.log('getAngle', p1, p2);
   return Math.atan2(p2.x - p1.x, p2.y - p1.y);
 }
 
 export function getDistance(p1, p2) {
-  // console.log('getDistance', p1, p2);
   const xDiff = p2.x - p1.x;
   const yDiff = p2.y - p1.y;
 
@@ -296,17 +301,14 @@ export function getDistance(p1, p2) {
 }
 
 export function getOppositeLength(angle, hip) {
-  // console.log('getOppositeLength', angle, hip);
   return Math.sin(angle) * hip;
 }
 
 export function getAdjacentLength(angle, hip) {
-  // console.log('getAdjacentLength', angle, hip);
   return Math.cos(angle) * hip;
 }
 
 export function getTangentLength(angle, opposite) {
-  // console.log('getTangentLength', angle, opposite);
   return opposite / Math.tan(angle);
 }
 

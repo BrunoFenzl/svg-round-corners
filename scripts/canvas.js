@@ -29,7 +29,7 @@ export function roundCorners(string, r, round) {
       .map(convertHVToL)
       .map(addMaxRadius)
       .map(el => {
-        console.log(el);
+        // console.log(el);
         return el;
       })
       .map((el) => {
@@ -39,57 +39,24 @@ export function roundCorners(string, r, round) {
         const anglePrv = getAngle(el.values, el.previous.values);
         const angleNxt = getAngle(el.values, el.next.values);
         
-        let angle = angleNxt - anglePrv;
-        
-        let offset;
+        const angle = angleNxt - anglePrv; // radians
+        const degrees = angle * (180/Math.PI); // degrees
+
+        let offset = 0;
         
         // prevent arc crossing the next command
         if (r >= el.maxRadius) {
-          r = el.maxRadius || r;
+          // r = el.maxRadius || r;
         }
-
-        const degrees = angle * (180/Math.PI);
-/*
-        if (degrees <= -270 ) {
-          offset = getTangentLength(angle/2, r );
-          sweepFlag = 1;
-          // console.log(`${degrees} <= -270`);
-        } else if (degrees > -270 && degrees < -90 ) {
-          offset = getTangentLength(angle/2, -r );
-          sweepFlag = 0;
-          // console.log(`-270 < ${degrees} < -90`);
-        } else if (degrees === -90) {
-          offset = getTangentLength(angle/2, -r); // obtuse angle
-          sweepFlag = 0;
-          // console.log(`${degrees} === -90`);
-        } else if (degrees > -90 && degrees <= 0) {
-          offset = getTangentLength(angle/2, -r);
-          sweepFlag = 0;
-          // console.log(`-90 < ${degrees} <= 0`);
-        } else if (degrees > 0 && degrees < 90) {
-          offset = getTangentLength(angle/2, r );
-          sweepFlag = 1;
-          // console.log(`0 < ${degrees} < 90`);
-        } else if (degrees === 90) {
-          offset = getTangentLength(angle/2, r); // obtuse angle
-          sweepFlag = 1;
-          // console.log(`${degrees} === 90`);
-        } else if (degrees > 90 && degrees < 270) {
-          offset = getTangentLength(angle/2, -r); // obtuse angle
-          sweepFlag = 0;
-          // console.log(`90 < ${degrees} < 270`);
-        } else {
-          offset = getTangentLength(angle/2, -r); // obtuse angle
-          sweepFlag = 0;
-          // console.log(`270 <= ${degrees}`);
-        }
-*/
 
         if ( degrees <= -270 || (degrees > 0 && degrees <= 90) ) { // sharp angles
-          offset = getTangentLength(angle/2, r );
+          offset = getTangentLength(angle/2, r);
           sweepFlag = 1;
         } else if ( (degrees > -270 && degrees <= 0) || degrees > 90 ) { // obtuse angles
-          offset = getTangentLength(angle/2, -r );
+          offset = getTangentLength(angle/2, -r);
+          if (offset === -Infinity) {
+            offset = -r;
+          }
           sweepFlag = 0;
         }
         
@@ -106,11 +73,10 @@ export function roundCorners(string, r, round) {
         switch (el.marker) {
           case 'M': // moveTo x,y
           case 'L': // lineTo x,y
-            console.log('prevPoint', prevPoint);
             newCmds.push({
               marker: el.marker,
               values: {
-                x: parseFloat(prevPoint[0].toFixed(3)),
+                x: parseFloat(prevPoint[0].toFixed(3)) || r,
                 y: parseFloat(prevPoint[1].toFixed(3)),
               }
             });
