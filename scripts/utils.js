@@ -40,14 +40,18 @@ export function roundValues(cmds, round) {
 
 export function getPreviousDiff(e, i, a) {
   const counter = i - 1;
-  const p = a[mod(counter, a.length)];
+  const prev = a[mod(counter, a.length)];
+
+  // if (e.marker === 'M') {
+  //   return a[a.length - 1]; // return z
+  // }
   
   const isDiff = ['x', 'y'].some((key) => {
-    return Math.round(Math.abs(p.values[key] - e.values[key])) > 10;
+    return Math.round(Math.abs(prev.values[key] - e.values[key])) > 10;
   });
 
   if (isDiff) {
-    return p;
+    return prev;
   } else {
     return getPreviousDiff(e, counter - 1, a);
   }
@@ -55,19 +59,18 @@ export function getPreviousDiff(e, i, a) {
 
 export function getNextDiff(e, i, a) {
   const counter = i + 1;
-  const p = a[mod(counter, a.length)];
-  console.log('next', p)
+  const next = a[mod(counter, a.length)];
 
-  if (p.marker === 'Z') {
-    return a[0];
-  }
+  // if (next.marker === 'Z') {
+  //   return next; // return z
+  // }
 
   const isDiff = ['x', 'y'].some((key) => {
-    return Math.round(Math.abs(p.values[key] - e.values[key])) !== 0;
+    return Math.round(Math.abs(next.values[key] - e.values[key])) > 10;
   });
 
   if (isDiff) {
-    return p;
+    return next;
   } else {
     return getNextDiff(e, counter + 1, a);
   }
@@ -82,13 +85,7 @@ export function linkAdjacent(el, index, array) {
 
 export function convertToAbsolute(el, index, arr) {
   // get previous item or last one if its the first coordinate
-  // const prev = index < 0 ? arr[arr.length - 1] : arr[index - 1];
-  let prev;
-
-  prev = arr[mod(index - 1, arr.length)];
-  // if (prev.marker.toLowerCase() === 'z') {
-  //   prev = arr[mod(index - 1, arr.length)];
-  // }
+  const prev = arr[mod(index - 1, arr.length)];
 
   // First is always absolute
   if (index === 0) {
