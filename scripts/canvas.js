@@ -36,15 +36,15 @@ export function roundCorners(string, r, round) {
         const largeArcFlag = 0;
         const anglePrv = getAngle(el.values, el.previous.values);
         const angleNxt = getAngle(el.values, el.next.values);
-        const angle = angleNxt - anglePrv;
-        const degrees = angle * (180/Math.PI);
+        
+        const angle = angleNxt - anglePrv; // radians
+        const degrees = angle * (180/Math.PI); // degrees
 
-        let offset;
-        let sweepFlag;
+        let offset = 0;
         
         // prevent arc crossing the next command
         if (r >= el.maxRadius) {
-          r = el.maxRadius || r;
+          // r = el.maxRadius || r;
         }
 
         if ( degrees <= -270 || (degrees > 0 && degrees <= 90) ) { // sharp angles
@@ -77,7 +77,7 @@ export function roundCorners(string, r, round) {
             newCmds.push({
               marker: el.marker,
               values: {
-                x: parseFloat(prevPoint[0].toFixed(3)),
+                x: parseFloat(prevPoint[0].toFixed(3)) || r,
                 y: parseFloat(prevPoint[1].toFixed(3)),
               }
             });
