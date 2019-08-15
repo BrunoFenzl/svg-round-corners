@@ -1,51 +1,51 @@
-import { pathParser, getDistance, getAngle, getTangentLength, getOppositeLength, getAdjacentLength, commandsToSvgPath, linkAdjacent, mod, chunkSubPaths, removeOverlapped, addMaxRadius, convertHVToL } from "./utils.js";
+import { pathParser, getDistance, getAngle, getTangentLength, getOppositeLength, getAdjacentLength, commandsToSvgPath, linkAdjacent, mod, chunkSubPaths, removeOverlapped, addMaxRadius, convertHVToL, roundValues, convertToAbsolute } from "./utils.js";
 
-export function roundCorners(string, r) {
+export function roundCorners(string, r, round) {
   // create specific commands
-  let cmds = [...pathParser(string, true)];
+  let cmds = [...pathParser(string)];
   let subpaths = [];
   let newCmds = [];
   
-  // split sub and compound paths
-  cmds.forEach((e, i, a) => {
-    if (e.marker.toUpperCase() === 'M') {
-      subpaths.push([]);
-    }
-    subpaths[subpaths.length - 1].push(e);
-  });
+  cmds
+    .map(convertToAbsolute)
+    // split sub and compound paths
+    .forEach((e, i, a) => {
+      if (e.marker === 'M') {
+        subpaths.push([]);
+      }
+      subpaths[subpaths.length - 1].push(e);
+    });
+
+  if (round) {
+    roundValues(cmds, round);
+  }
 
   subpaths.forEach((subPathCmds) => {
     subPathCmds
-      // We are only looking for lineTo commands that may be
+      // We are only excluding lineTo commands that may be
       // overlapping or having really, really near coordinates
       .filter(removeOverlapped)
       .map(linkAdjacent)
       .map(convertHVToL)
       .map(addMaxRadius)
+      .map(el => {
+        console.log(el);
+        return el;
+      })
       .map((el) => {
         const largeArcFlag = 0;
-        let prevPoint;
-        let nextPoint;
         let sweepFlag;
 
-        let prv = el.previous;
-        let nxt = el.next;
-
-        const anglePrv = getAngle(el.values, prv.values);
-        const angleNxt = getAngle(el.values, nxt.values);
+        const anglePrv = getAngle(el.values, el.previous.values);
+        const angleNxt = getAngle(el.values, el.next.values);
         
         let angle = angleNxt - anglePrv;
         
         let offset;
         
-        console.log('maxRadius', r, el.maxRadius);
         // prevent arc crossing the next command
         if (r >= el.maxRadius) {
           r = el.maxRadius || r;
-        }
-
-        if (Math.abs(angle) > Math.PI * 1.5) { // > 270°
-          // angle = Math.PI * 2 - Math.abs(angle); // flip side with 180°
         }
 
         const degrees = angle * (180/Math.PI);
@@ -85,27 +85,28 @@ export function roundCorners(string, r) {
         }
 */
 
-        if ( degrees <= -270 || (degrees > 0 && degrees <= 90) ) {
+        if ( degrees <= -270 || (degrees > 0 && degrees <= 90) ) { // sharp angles
           offset = getTangentLength(angle/2, r );
           sweepFlag = 1;
-        } else if ( (degrees > -270 && degrees <= 0) || degrees > 90 ) {
+        } else if ( (degrees > -270 && degrees <= 0) || degrees > 90 ) { // obtuse angles
           offset = getTangentLength(angle/2, -r );
           sweepFlag = 0;
         }
         
-        prevPoint = [
+        const prevPoint = [
           el.values.x + getOppositeLength(anglePrv, offset),
           el.values.y + getAdjacentLength(anglePrv, offset)
         ];
         
-        nextPoint = [
+        const nextPoint = [
           el.values.x + getOppositeLength(angleNxt, offset),
           el.values.y + getAdjacentLength(angleNxt, offset)
         ];
-
-        switch (el.marker.toUpperCase()) {
+        
+        switch (el.marker) {
           case 'M': // moveTo x,y
           case 'L': // lineTo x,y
+            console.log('prevPoint', prevPoint);
             newCmds.push({
               marker: el.marker,
               values: {
@@ -113,14 +114,16 @@ export function roundCorners(string, r) {
                 y: parseFloat(prevPoint[1].toFixed(3)),
               }
             });
+            
             // there only need be a curve if and only if the next marker is a corner
-            if (el.next.marker.toUpperCase() === 'L' || el.next.marker.toUpperCase() === 'M') {
+            // if (['M', 'L'].indexOf(el.next.marker.toUpperCase()) > -1) {
+            if (el.next.marker === 'L' || el.next.marker === 'M') {
               newCmds.push({
                 marker: 'A',
                 values: {
                   radiusX: r,
                   radiusY: r,
-                  rotation: angle * (180/Math.PI),
+                  rotation: degrees,
                   largeArc: largeArcFlag,
                   sweep: sweepFlag,
                   x: parseFloat(nextPoint[0].toFixed(3)),
@@ -141,8 +144,10 @@ export function roundCorners(string, r) {
             newCmds.push({ marker: el.marker, values: el.values });
             break;
         }
+
       });
     })
     const newCommands = commandsToSvgPath(newCmds);
+    console.log(newCmds);
     return newCommands;
 }

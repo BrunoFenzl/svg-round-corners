@@ -26,17 +26,16 @@ export function pathParser(str, round) {
       let vals = values ? values.map(parseFloat) : [];      
       return newCommand(cmd.marker, vals);
     })
-    .map(convertToAbsolute);
-    
-  if (round) {
-    results.forEach((el) => {
-      return Object.keys(el.values).forEach(key => 
-        el.values[key] = el.values[key] && parseFloat(el.values[key].toFixed(3))
-      )}
-    )
-  }
 
   return results;
+}
+
+export function roundValues(cmds, round) {
+  cmds.forEach(el => 
+    Object.keys(el.values).forEach(key => 
+      el.values[key] = el.values[key] && parseFloat(el.values[key].toFixed(round))
+    )
+  )
 }
 
 export function getPreviousDiff(e, i, a) {
@@ -55,20 +54,22 @@ export function getPreviousDiff(e, i, a) {
 }
 
 export function getNextDiff(e, i, a) {
-  const p = a[mod(i + 1, a.length)];
-/*
-  if (p.marker.toLowerCase() === 'z') {
-    return getNextDiff(e, i + 1, a);
+  const counter = i + 1;
+  const p = a[mod(counter, a.length)];
+  console.log('next', p)
+
+  if (p.marker === 'Z') {
+    return a[0];
   }
-*/
-  
+
   const isDiff = ['x', 'y'].some((key) => {
-    return Math.round(Math.abs(p.values[key] - e.values[key])) > 10;
+    return Math.round(Math.abs(p.values[key] - e.values[key])) !== 0;
   });
+
   if (isDiff) {
     return p;
   } else {
-    return getNextDiff(e, i + 1, a);
+    return getNextDiff(e, counter + 1, a);
   }
 }
 
@@ -76,7 +77,6 @@ export function linkAdjacent(el, index, array) {
   el.previous = getPreviousDiff(el, index, array);
   el.next = getNextDiff(el, index, array);
 
-  // console.log('adjacent', el.marker, index, el.previous, el.next);
   return el;
 }
 
@@ -91,8 +91,11 @@ export function convertToAbsolute(el, index, arr) {
   // }
 
   // First is always absolute
+  if (index === 0) {
+    el.marker = el.marker.toUpperCase();
+  }
   // only need to test lowercase (relative) commands
-  if (index !== 0 && el.marker === el.marker.toLowerCase()) {
+  if (el.marker === el.marker.toLowerCase()) {
     // convert all to uppercase
     el.marker = el.marker.toUpperCase();
     switch (el.marker) {
@@ -133,7 +136,7 @@ export function convertToAbsolute(el, index, arr) {
     }
   }
 
-  if (el.marker.toLowerCase() === 'z') {
+  if (el.marker === 'Z') {
     el.values.x = prev.values.x;
     el.values.y = prev.values.y;
   }
@@ -240,7 +243,6 @@ export function addMaxRadius(el) {
   }); // half way through between both points
 
   el.maxRadius = Math.min(prvSide, nxtSide) / 2;
-  console.log('prvSide, nxtSide', prvSide, nxtSide);
   return el;
 }
 
@@ -248,7 +250,7 @@ export function removeOverlapped(el, index, array) {
   let previous = array[mod(index - 1, array.length)];
   // console.log('L', el.marker);
   // ...so skip the first moveTo command and any other that's not a lineTo
-  if (index === 0 || el.marker.toUpperCase() !== 'L') {
+  if (index === 0 || el.marker !== 'L') {
     return true;
   }
   // it seems we have a lineTo here. Get the immediate previous
@@ -258,15 +260,12 @@ export function removeOverlapped(el, index, array) {
     return Math.round(Math.abs(previous.values[key] - el.values[key])) !== 0;
   });
 
-  // const diffNext = ['x', 'y'].some((key) => {
-  //   return Math.round(Math.abs(next.values[key] - el.values[key])) !== 0;
-  // })
   return diffPrev;
 }
 
 export function chunkSubPaths(el, index, arr) {
-  return el.marker.toUpperCase() === 'M' ?
-    arr.splice(index, arr.findIndex((el, i) => el.marker.toUpperCase() === 'M' && i > index)) :
+  return el.marker === 'M' ?
+    arr.splice(index, arr.findIndex((el, i) => el.marker === 'M' && i > index)) :
     false;
 }
 
@@ -274,7 +273,7 @@ export function commandsToSvgPath(cmds) {
   return cmds
     .map((cmd) => {
       let d = '';
-      if (cmd.marker.toLowerCase() !== 'z') {
+      if (cmd.marker !== 'Z') {
         d = Object.keys(cmd.values).map(key => cmd.values[key]).join(',');
       }
       return `\n${cmd.marker} ${d}`;
