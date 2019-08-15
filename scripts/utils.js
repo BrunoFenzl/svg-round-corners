@@ -66,7 +66,7 @@ export function getNextDiff(e, i, a) {
   // }
 
   const isDiff = ['x', 'y'].some((key) => {
-    return Math.round(Math.abs(next.values[key] - e.values[key])) > 10;
+    return Math.round(Math.abs(next.values[key] - e.values[key])) !== 0;
   });
 
   if (isDiff) {
@@ -280,12 +280,10 @@ export function commandsToSvgPath(cmds) {
 }
 
 export function getAngle(p1, p2) {
-  // console.log('getAngle', p1, p2);
   return Math.atan2(p2.x - p1.x, p2.y - p1.y);
 }
 
 export function getDistance(p1, p2) {
-  // console.log('getDistance', p1, p2);
   const xDiff = p2.x - p1.x;
   const yDiff = p2.y - p1.y;
 
@@ -293,17 +291,14 @@ export function getDistance(p1, p2) {
 }
 
 export function getOppositeLength(angle, hip) {
-  // console.log('getOppositeLength', angle, hip);
   return Math.sin(angle) * hip;
 }
 
 export function getAdjacentLength(angle, hip) {
-  // console.log('getAdjacentLength', angle, hip);
   return Math.cos(angle) * hip;
 }
 
 export function getTangentLength(angle, opposite) {
-  // console.log('getTangentLength', angle, opposite);
   return opposite / Math.tan(angle);
 }
 
