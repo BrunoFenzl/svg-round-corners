@@ -23,11 +23,12 @@ export function roundCorners(string, r, round) {
       // We are only excluding lineTo commands that may be
       // overlapping or having really, really near coordinates
       .map(removeOverlapped);
-    removeLastCmdIfOverlapped(subPathCmds);
+    removeLastCmdIfOverlapped(subPathCmds)
       // .map(linkAdjacent)
-      // .map(convertHVToL)
+      ;
     subPathCmds
       .filter((el) => !el.overlap)
+      .map(convertHVToL)
       .map(addMaxRadius)
       .map((el, i, arr) => {
         const largeArcFlag = 0;
