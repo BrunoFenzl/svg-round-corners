@@ -88,16 +88,10 @@ export function convertToAbsolute(el, index, arr) {
         el.values.y += prev.values.y;
         break;
       case 'H': // horizontal to x
-        // convert to L
-        el.marker = 'L';
         el.values.x += prev.values.x;
-        el.values.y = prev.values.y;
         break;
       case 'V': // vertical to y
-        // convert to L
-        el.marker = 'L';
         el.values.x = prev.values.x;
-        el.values.y += prev.values.y;
         break;
       case 'C': // beziér curve x1 y1, x2 y2, x y
         el.values.x += prev.values.x;
