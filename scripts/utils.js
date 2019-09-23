@@ -26,6 +26,7 @@ export function pathParser(str, round) {
       let vals = values ? values.map(parseFloat) : [];      
       return newCommand(cmd.marker, vals);
     })
+    .map(convertToAbsolute)
 
   return results;
 }
@@ -40,20 +41,12 @@ export function roundValues(cmds, round) {
 
 export function getPreviousDiff(e, i, a) {
   const counter = i - 1;
-  const prev = a[mod(counter, a.length)];
+  const previous = a[mod(counter, a.length)];
 
-  // if (e.marker === 'M') {
-  //   return a[a.length - 1]; // return z
-  // }
-  
-  const isDiff = ['x', 'y'].some((key) => {
-    return Math.round(Math.abs(prev.values[key] - e.values[key])) > 10;
-  });
-
-  if (isDiff) {
-    return prev;
+  if (previous.marker !== 'Z') {
+    return previous;
   } else {
-    return getPreviousDiff(e, counter - 1, a);
+    return getPreviousDiff(e, counter, a);
   }
 }
 
@@ -61,18 +54,10 @@ export function getNextDiff(e, i, a) {
   const counter = i + 1;
   const next = a[mod(counter, a.length)];
 
-  // if (next.marker === 'Z') {
-  //   return next; // return z
-  // }
-
-  const isDiff = ['x', 'y'].some((key) => {
-    return Math.round(Math.abs(next.values[key] - e.values[key])) !== 0;
-  });
-
-  if (isDiff) {
-    return next;
+  if (next.overlap || next.marker === 'Z') {
+    return getNextDiff(e, counter, a);
   } else {
-    return getNextDiff(e, counter + 1, a);
+    return next;
   }
 }
 
@@ -103,9 +88,15 @@ export function convertToAbsolute(el, index, arr) {
         el.values.y += prev.values.y;
         break;
       case 'H': // horizontal to x
+        // convert to L
+        el.marker = 'L';
         el.values.x += prev.values.x;
+        el.values.y = prev.values.y;
         break;
       case 'V': // vertical to y
+        // convert to L
+        el.marker = 'L';
+        el.values.x = prev.values.x;
         el.values.y += prev.values.y;
         break;
       case 'C': // beziér curve x1 y1, x2 y2, x y
@@ -134,14 +125,14 @@ export function convertToAbsolute(el, index, arr) {
   }
 
   if (el.marker === 'Z') {
-    el.values.x = prev.values.x;
-    el.values.y = prev.values.y;
+    el.values.x = null;
+    el.values.y = null;
   }
 
   return el;
 }
 
-function newCommand(marker, values) {
+export function newCommand(marker, values) {
   let cmd = { marker, values: {} };
   let v = cmd.values; // shortcut
   switch (marker.toUpperCase()) {
@@ -202,9 +193,9 @@ export function mod(x, m) {
   return (x % m + m) % m;
 }
 
-export function convertHVToL(el, index) {
+export function convertHVToL(el, index, arr) {
   if (index > 0) {
-    const prev = el.previous;
+    const prev = arr[index - 1];
     switch (el.marker) {
       case 'H':
         el.marker = 'L'
@@ -220,14 +211,17 @@ export function convertHVToL(el, index) {
   return el;
 }
 
-export function addMaxRadius(el) {
+export function addMaxRadius(el, i, arr) {
+  const previous = getPreviousDiff(el, i, arr);
+  const next = getNextDiff(el, i, arr);
+  
   const nxtSide = getDistance({
     x: el.values.x,
     y: el.values.y,
   },
   {
-    x: el.next.values.x,
-    y: el.next.values.y,
+    x: next.values.x,
+    y: next.values.y,
   }); // half way through between both points
 
   const prvSide = getDistance({
@@ -235,8 +229,8 @@ export function addMaxRadius(el) {
     y: el.values.y,
   },
   {
-    x: el.previous.values.x,
-    y: el.previous.values.y,
+    x: previous.values.x,
+    y: previous.values.y,
   }); // half way through between both points
 
   el.maxRadius = Math.min(prvSide, nxtSide) / 2;
@@ -244,20 +238,38 @@ export function addMaxRadius(el) {
 }
 
 export function removeOverlapped(el, index, array) {
-  let previous = array[mod(index - 1, array.length)];
-  // console.log('L', el.marker);
-  // ...so skip the first moveTo command and any other that's not a lineTo
-  if (index === 0 || el.marker !== 'L') {
-    return true;
-  }
-  // it seems we have a lineTo here. Get the immediate previous
-  // command to check if the x, y coordinates overlap
-  // If any of x or y are different, we may draw a curve here so all good!
-  const diffPrev = ['x', 'y'].some((key) => {
-    return Math.round(Math.abs(previous.values[key] - el.values[key])) !== 0;
-  });
+  // Skip the first moveTo command and any other that's not a lineTo.
+  if (index !== 0 || el.marker === 'L') {
+    // It seems we have a lineTo here. Get the immediate previous command
+    let previous = array[index - 1];
+    // …and check if the x, y coordinates are equals.
+    const overlap = ['x', 'y'].every((key) => {
+      // If any of x or y are different, we may draw a curve here and return true.
+      return Math.round(Math.abs(previous.values[key] - el.values[key])) === 0;
+    });
 
-  return diffPrev;
+    if (overlap) {
+      el.overlap = true;
+    }
+  }
+  
+  return el;
+}
+
+export function removeLastCmdIfOverlapped(cmds) {
+  const first = { ...cmds[0] };
+  
+  // ignore first index
+  for(let i = cmds.length - 1; i > 1; i--) {
+    const overlap = ['x', 'y'].every((key) => {
+      // If any of x or y are different, we may draw a curve here and return true.
+      return Math.round(Math.abs(cmds[i].values[key] - first.values[key])) === 0;
+    });
+
+    if (overlap) {
+      cmds[i].overlap = true;
+    }
+  }
 }
 
 export function chunkSubPaths(el, index, arr) {
@@ -314,4 +326,26 @@ export function arraysEqual(arr1, arr2) {
   }
 
   return true;
+}
+
+export default {
+  pathParser,
+  roundValues,
+  getPreviousDiff,
+  getNextDiff,
+  linkAdjacent,
+  convertToAbsolute,
+  mod,
+  convertHVToL,
+  addMaxRadius,
+  removeOverlapped,
+  removeLastCmdIfOverlapped,
+  chunkSubPaths,
+  commandsToSvgPath,
+  getAngle,
+  getDistance,
+  getOppositeLength,
+  getAdjacentLength,
+  getTangentLength,
+  arraysEqual,
 }

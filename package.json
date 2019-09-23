@@ -4,7 +4,8 @@
   "description": "A small library for rounding corners",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "babel ./scripts -d lib"
   },
   "repository": {
     "type": "git",
@@ -22,7 +23,11 @@
     "url": "https://github.com/BrunoFenzl/svg-round-corners/issues"
   },
   "homepage": "https://github.com/BrunoFenzl/svg-round-corners#readme",
+  "browserslist": "> 0.25%, not dead",
   "devDependencies": {
+    "@babel/cli": "^7.6.0",
+    "@babel/core": "^7.6.0",
+    "@babel/preset-env": "^7.6.0",
     "jest": "^24.8.0"
   }
 }
