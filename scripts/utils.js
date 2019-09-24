@@ -25,9 +25,7 @@ export function pathParser(str, round) {
       const vals = values ? values.map(parseFloat) : [];
       return newCommands(cmd.marker, vals);
     })
-    // .map(convertHVToL)
     .map(convertToAbsolute)
-    // .map(convertHVToL)
     .map(el => {
       // console.log('after flat', el);
       return el;
@@ -67,19 +65,23 @@ export function getNextDiff(e, i, a) {
 
 export function convertToAbsolute(el, index, arr) {
   // get previous item or last one if its the first coordinate
-  const prev = getPreviousDiff(el, index, arr);
-
+  const prev = arr[index - 1];// getPreviousDiff(el, index, arr);
+  console.log('prev', prev);
   // First is always absolute
   if (index === 0) {
     el.marker = el.marker.toUpperCase();
   }
   // debugger;
   // only need to test lowercase (relative) commands
-  if (el.marker === el.marker.toLowerCase()) {
+  if (el.marker === el.marker.toLowerCase() && index > 0) {
     // convert all to uppercase
     el.marker = el.marker.toUpperCase();
     switch (el.marker) {
       case 'M': // move to x,y
+        el.values.x += prev.values.x;
+        el.values.y += prev.values.y;
+        console.log('M', el, prev);
+        break;
       case 'L': // line to x,y
       case 'A':
         el.values.x += prev.values.x;
@@ -113,6 +115,8 @@ export function convertToAbsolute(el, index, arr) {
         break;
       case 'T':
         break;
+      case 'Z':
+        break;
     }
   } else if (el.marker === el.marker.toUpperCase()) {
     switch (el.marker) {
@@ -128,11 +132,11 @@ export function convertToAbsolute(el, index, arr) {
   }
 
   if (el.marker === 'Z') {
-    el.values.x = null;
-    el.values.y = null;
+    const mBefore = arr.find((el, fi) => el.marker === 'M' && fi < index);
+    el.values.x = mBefore.values.x;
+    el.values.y = mBefore.values.y;
   }
 
-  console.log('after flat', el);
   return el;
 }
 
@@ -255,7 +259,10 @@ export function newCommands(marker, values) {
     case 'Z':
       cmds.push({
         marker,
-        values: []
+        values: {
+          x: 0,
+          y: 0,
+        }
       });
       break;
   }
@@ -264,31 +271,6 @@ export function newCommands(marker, values) {
 
 export function mod(x, m) {
   return (x % m + m) % m;
-}
-
-export function convertHVToL(el, index, arr) {
-  if (index > 0) {
-    const prev = arr[index - 1];
-    switch (el.marker) {
-      // case 'h':
-      //   el.marker = 'l'
-      //   el.values.y = prev.values.y;
-      //   break;
-      // case 'v':
-      //   el.marker = 'l'
-      //   el.values.x = prev.values.x;
-      //   break;
-      case 'H':
-        el.marker = 'L'
-        el.values.y = prev.values.y;
-        break;
-      case 'V':
-        el.marker = 'L'
-        el.values.x = prev.values.x;
-        break;
-    }
-  }
-  return el;
 }
 
 export function addMaxRadius(el, i, arr) {
@@ -416,7 +398,6 @@ export default {
   getNextDiff,
   convertToAbsolute,
   mod,
-  convertHVToL,
   addMaxRadius,
   removeOverlapped,
   removeLastCmdIfOverlapped,
