@@ -1,9 +1,8 @@
 export function pathParser(str, round) {
   const markerRegEx = /[MmLlSsQqLlHhVvCcSsQqTtAaZz]/g;
   const digitRegEx = /-?[0-9]*\.?\d+/g;
-  let results = [];
   
-  results = [...str.matchAll(markerRegEx)]
+  return [...str.matchAll(markerRegEx)]
     .map((match) => {
       return { marker: match[0], index: match.index };
     })
@@ -21,14 +20,19 @@ export function pathParser(str, round) {
       ]);
     }, [])
     .reverse()
-    .map((cmd, i, arr) => {
-      let values = cmd.chunk.match(digitRegEx);
-      let vals = values ? values.map(parseFloat) : [];      
-      return newCommand(cmd.marker, vals);
+    .flatMap((cmd) => {
+      const values = cmd.chunk.match(digitRegEx);
+      const vals = values ? values.map(parseFloat) : [];
+      return newCommands(cmd.marker, vals);
     })
+    // .map(convertHVToL)
     .map(convertToAbsolute)
+    // .map(convertHVToL)
+    .map(el => {
+      // console.log('after flat', el);
+      return el;
+    })
 
-  return results;
 }
 
 export function roundValues(cmds, round) {
@@ -61,21 +65,15 @@ export function getNextDiff(e, i, a) {
   }
 }
 
-export function linkAdjacent(el, index, array) {  
-  el.previous = getPreviousDiff(el, index, array);
-  el.next = getNextDiff(el, index, array);
-
-  return el;
-}
-
 export function convertToAbsolute(el, index, arr) {
   // get previous item or last one if its the first coordinate
-  const prev = arr[mod(index - 1, arr.length)];
+  const prev = getPreviousDiff(el, index, arr);
 
   // First is always absolute
   if (index === 0) {
     el.marker = el.marker.toUpperCase();
   }
+  // debugger;
   // only need to test lowercase (relative) commands
   if (el.marker === el.marker.toLowerCase()) {
     // convert all to uppercase
@@ -87,11 +85,15 @@ export function convertToAbsolute(el, index, arr) {
         el.values.x += prev.values.x;
         el.values.y += prev.values.y;
         break;
-      case 'H': // horizontal to x
+      case 'H': // horizontalTo x
+        el.marker = 'L';
         el.values.x += prev.values.x;
+        el.values.y = prev.values.y;
         break;
-      case 'V': // vertical to y
+      case 'V': // verticalTo y
+        el.marker = 'L';
         el.values.x = prev.values.x;
+        el.values.y += prev.values.y;
         break;
       case 'C': // beziér curve x1 y1, x2 y2, x y
         el.values.x += prev.values.x;
@@ -111,9 +113,16 @@ export function convertToAbsolute(el, index, arr) {
         break;
       case 'T':
         break;
-      case 'A':
-        el.values.x += prev.values.x;
-        el.values.y += prev.values.y;
+    }
+  } else if (el.marker === el.marker.toUpperCase()) {
+    switch (el.marker) {
+      case 'H': // horizontalTo x
+        el.marker = 'L';
+        el.values.y = prev.values.y;
+        break;
+      case 'V': // verticalTo y
+        el.marker = 'L';
+        el.values.x = prev.values.x;
         break;
     }
   }
@@ -123,64 +132,134 @@ export function convertToAbsolute(el, index, arr) {
     el.values.y = null;
   }
 
+  console.log('after flat', el);
   return el;
 }
 
-export function newCommand(marker, values) {
-  let cmd = { marker, values: {} };
-  let v = cmd.values; // shortcut
+export function newCommands(marker, values) {
+  const cmds = [];
+  
   switch (marker.toUpperCase()) {
-    case 'M': // move to x,y
-    case 'L': // line to x,y
-      v.x = values[0];
-      v.y = values[1];
+    case 'M': // moveTo x,y
+      for (let i = 0; i < values.length; i+=2) {
+        cmds.push({
+          marker,
+          values: {
+            x: values[i],
+            y: values[i + 1],
+          }
+        });
+      }
       break;
-    case 'H': // horizontal to x
-      v.x = values[0];
-      v.y = null;
+    case 'L': // lineTo x,y
+      for (let i = 0; i < values.length; i+=2) {
+        cmds.push({
+          marker,
+          values: {
+            x: values[i],
+            y: values[i + 1],
+          }
+        });
+      }
       break;
-    case 'V': // vertical to y
-      v.x = null;
-      v.y = values[0];
+    case 'H': // horizontalTo x
+      for (let i = 0; i < values.length; i++) {
+        cmds.push({
+          marker,
+          values: {
+            x: values[i],
+            y: 0,
+          }
+        });
+      }
+      break;
+    case 'V': // verticalTo y
+      for (let i = 0; i < values.length; i++) {
+        cmds.push({
+          marker,
+          values: {
+            x: 0,
+            y: values[i],
+          }
+        });
+      }
       break;
     case 'C': // cubic beziér curve x1 y1, x2 y2, x y
-      v.x1 = values[0];
-      v.y1 = values[1];
-      v.x2 = values[2];
-      v.y2 = values[3];
-      v.x = values[4];
-      v.y = values[5];
+      for (let i = 0; i < values.length; i+=6) {
+        cmds.push({
+          marker,
+          values: {
+            x1: values[i],
+            y1: values[i + 1],
+            x2: values[i + 2],
+            y2: values[i + 3],
+            x: values[i + 4],
+            y: values[i + 5],
+          }
+        });
+      }
       break;
     case 'S':
-      v.x2 = values[0];
-      v.y2 = values[1];
-      v.x = values[2];
-      v.y = values[3];
+      for (let i = 0; i < values.length; i+=4) {
+        cmds.push({
+          marker,
+          values: {
+            x2: values[i],
+            y2: values[i + 1],
+            x: values[i + 2],
+            y: values[i + 3],
+          }
+        });
+      }
       break;
     case 'Q':
-      v.x1 = values[0];
-      v.y1 = values[1];
-      v.x = values[2];
-      v.y = values[3];
+      for (let i = 0; i < values.length; i+=4) {
+        cmds.push({
+          marker,
+          values: {
+            x1: values[i],
+            y1: values[i + 1],
+            x: values[i + 2],
+            y: values[i + 3],
+          }
+        });
+      }
       break;
     case 'T':
-      v.x = values[0];
-      v.y = values[1];
+      for (let i = 0; i < values.length; i+=2) {
+        cmds.push({
+          marker,
+          values: {
+            x: values[i],
+            y: values[i + 1],
+          }
+        });
+      }
       break;
     case 'A':
-      v.radiusX = values[0];
-      v.radiusY = values[1];
-      v.rotation = values[2];
-      v.largeArc = values[3];
-      v.sweep = values[4];
-      v.x = values[5];
-      v.y = values[6];
+      for (let i = 0; i < values.length; i+=7) {
+        cmds.push({
+          marker,
+          values: {
+            radiusX: values[i],
+            radiusY: values[i + 1],
+            rotation: values[i + 2],
+            largeArc: values[i + 3],
+            sweep: values[i + 4],
+            x: values[i + 5],
+            y: values[i + 6],
+          }
+        });
+      }
       break;
     case 'Z':
+      cmds.push({
+        marker,
+        values: []
+      });
       break;
   }
-
-  return cmd;
+  return cmds;
 }
 
 export function mod(x, m) {
@@ -191,6 +270,14 @@ export function convertHVToL(el, index, arr) {
   if (index > 0) {
     const prev = arr[index - 1];
     switch (el.marker) {
+      // case 'h':
+      //   el.marker = 'l'
+      //   el.values.y = prev.values.y;
+      //   break;
+      // case 'v':
+      //   el.marker = 'l'
+      //   el.values.x = prev.values.x;
+      //   break;
       case 'H':
         el.marker = 'L'
         el.values.y = prev.values.y;
@@ -201,7 +288,6 @@ export function convertHVToL(el, index, arr) {
         break;
     }
   }
-
   return el;
 }
 
@@ -233,7 +319,7 @@ export function addMaxRadius(el, i, arr) {
 
 export function removeOverlapped(el, index, array) {
   // Skip the first moveTo command and any other that's not a lineTo.
-  if (index !== 0 || el.marker === 'L') {
+  if (index !== 0 && el.marker === 'L') {
     // It seems we have a lineTo here. Get the immediate previous command
     let previous = array[index - 1];
     // …and check if the x, y coordinates are equals.
@@ -250,20 +336,21 @@ export function removeOverlapped(el, index, array) {
   return el;
 }
 
-export function removeLastCmdIfOverlapped(cmds) {
-  const first = { ...cmds[0] };
-  
-  // ignore first index
-  for(let i = cmds.length - 1; i > 1; i--) {
-    const overlap = ['x', 'y'].every((key) => {
-      // If any of x or y are different, we may draw a curve here and return true.
-      return Math.round(Math.abs(cmds[i].values[key] - first.values[key])) === 0;
-    });
+export function removeLastCmdIfOverlapped(cmds, counter) {  
+  const overlap = ['x', 'y'].every((key) => {
+    // If any of x or y are different, we may draw a curve here and return true.
+    return Math.round(Math.abs(cmds[counter].values[key] - cmds[0].values[key])) === 0;
+  });
 
-    if (overlap) {
-      cmds[i].overlap = true;
-    }
+  if (cmds[counter].marker === 'L' && overlap) {
+    cmds[counter].overlap = true;
+    removeLastCmdIfOverlapped(cmds, counter - 1)
   }
+  
+  if (cmds[counter].marker === 'Z') {
+    removeLastCmdIfOverlapped(cmds, counter - 1)
+  }
+  
 }
 
 export function chunkSubPaths(el, index, arr) {
@@ -327,7 +414,6 @@ export default {
   roundValues,
   getPreviousDiff,
   getNextDiff,
-  linkAdjacent,
   convertToAbsolute,
   mod,
   convertHVToL,
