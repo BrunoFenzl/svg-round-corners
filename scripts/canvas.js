@@ -31,6 +31,7 @@ export function roundCorners(string, r, round) {
       .map(addMaxRadius)
       .map((el, i, arr) => {
         const largeArcFlag = 0;
+        console.log(el);
 
         const prev = getPreviousDiff(el, i, arr);
         const next = getNextDiff(el, i, arr);
@@ -62,7 +63,7 @@ export function roundCorners(string, r, round) {
           }
         }
 
-        console.log(el.marker, offset);
+        console.log(el.marker, degrees);
         
         const prevPoint = [
           el.values.x + getOppositeLength(anglePrv, offset),
@@ -78,7 +79,6 @@ export function roundCorners(string, r, round) {
           case 'M': // moveTo x,y
           case 'L': // lineTo x,y
             // there only need be a curve if and only if the next marker is a corner
-            
             if (next.marker === 'L' || next.marker === 'M') {  
               newCmds.push({
                 marker: el.marker,
@@ -119,6 +119,9 @@ export function roundCorners(string, r, round) {
       });
     })
     console.log(newCmds);
-    const newCommands = commandsToSvgPath(newCmds);
-    return newCommands;
+
+    return {
+      path: commandsToSvgPath(newCmds),
+      commands: newCmds
+    };
 }
