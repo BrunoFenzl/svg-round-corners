@@ -1,4 +1,4 @@
-import { pathParser, getDistance, getAngle, getTangentLength, getOppositeLength, getAdjacentLength, commandsToSvgPath, linkAdjacent, mod, chunkSubPaths, removeOverlapped, addMaxRadius, convertHVToL, roundValues, convertToAbsolute, removeLastCmdIfOverlapped, getPreviousDiff, getNextDiff } from "./utils.js";
+import { pathParser, getAngle, getTangentLength, getOppositeLength, getAdjacentLength, commandsToSvgPath, removeOverlapped, addMaxRadius, convertHVToL, roundValues, getPreviousDiff, getNextDiff, removeLastCmdIfOverlapped } from "./utils.js";
 
 export function roundCorners(string, r, round) {
   // create specific commands
@@ -23,23 +23,17 @@ export function roundCorners(string, r, round) {
       // We are only excluding lineTo commands that may be
       // overlapping or having really, really near coordinates
       .map(removeOverlapped);
-    removeLastCmdIfOverlapped(subPathCmds)
-      // .map(linkAdjacent)
-      ;
+
+    removeLastCmdIfOverlapped(subPathCmds, subPathCmds.length - 1);
+    
     subPathCmds
       .filter((el) => !el.overlap)
-      .map(convertHVToL)
       .map(addMaxRadius)
       .map((el, i, arr) => {
         const largeArcFlag = 0;
 
-        console.log('el', el);
         const prev = getPreviousDiff(el, i, arr);
         const next = getNextDiff(el, i, arr);
-
-        if (next.marker === 'Z') {
-          console.log('next Z', el);
-        }
 
         const anglePrv = getAngle(el.values, prev.values);
         const angleNxt = getAngle(el.values, next.values);
@@ -55,46 +49,45 @@ export function roundCorners(string, r, round) {
           r = el.maxRadius;
         }
 
-        if ( degrees <= -270 || (degrees > 0 && degrees <= 90) ) { // sharp angles
+        if ( degrees <= -270 || (degrees >= 0 && degrees <= 90) ) { // sharp angles
           offset = getTangentLength(angle/2, r);
           if (offset === Infinity) {
             offset = r;
           }
           sweepFlag = 1;
-        } else if ( (degrees > -270 && degrees <= 0) || degrees > 90 ) { // obtuse angles
+        } else if ( (degrees > -270 && degrees < 0) || degrees > 90 ) { // obtuse angles
           offset = getTangentLength(angle/2, -r );
           if (offset === -Infinity) {
             offset = -r;
           }
         }
+
+        console.log(el.marker, offset);
         
         const prevPoint = [
           el.values.x + getOppositeLength(anglePrv, offset),
           el.values.y + getAdjacentLength(anglePrv, offset)
         ];
         
-        // console.log(el, next);
-
         const nextPoint = [
           el.values.x + getOppositeLength(angleNxt, offset),
           el.values.y + getAdjacentLength(angleNxt, offset)
         ];
-        
-        // console.log(el, degrees, prevPoint, nextPoint);
-        
+                
         switch (el.marker) {
           case 'M': // moveTo x,y
           case 'L': // lineTo x,y
-            newCmds.push({
-              marker: el.marker,
-              values: {
-                x: parseFloat(prevPoint[0].toFixed(3)),
-                y: parseFloat(prevPoint[1].toFixed(3)),
-              }
-            });
-            
             // there only need be a curve if and only if the next marker is a corner
-            if (next.marker === 'L' || next.marker === 'M') {
+            
+            if (next.marker === 'L' || next.marker === 'M') {  
+              newCmds.push({
+                marker: el.marker,
+                values: {
+                  x: parseFloat(prevPoint[0].toFixed(3)),
+                  y: parseFloat(prevPoint[1].toFixed(3)),
+                }
+              });
+
               newCmds.push({
                 marker: 'A',
                 values: {
@@ -107,6 +100,8 @@ export function roundCorners(string, r, round) {
                   y: parseFloat(nextPoint[1].toFixed(3)),
                 },
               });
+            } else {
+              newCmds.push({ marker: el.marker, values: el.values });
             }
             break;
           
@@ -123,7 +118,7 @@ export function roundCorners(string, r, round) {
         }
       });
     })
-    console.log('newCmds', newCmds);
+    console.log(newCmds);
     const newCommands = commandsToSvgPath(newCmds);
     return newCommands;
 }
