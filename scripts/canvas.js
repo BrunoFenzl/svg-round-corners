@@ -1,4 +1,4 @@
-import { pathParser, getAngle, getTangentLength, getOppositeLength, getAdjacentLength, commandsToSvgPath, removeOverlapped, addMaxRadius, convertHVToL, roundValues, getPreviousDiff, getNextDiff, removeLastCmdIfOverlapped } from "./utils.js";
+import { pathParser, getAngle, getTangentLength, getOppositeLength, getAdjacentLength, commandsToSvgPath, removeOverlapped, addMaxRadius, roundValues, getPreviousDiff, getNextDiff, removeLastCmdIfOverlapped } from "./utils.js";
 
 export function roundCorners(string, r, round) {
   // create specific commands
@@ -31,7 +31,6 @@ export function roundCorners(string, r, round) {
       .map(addMaxRadius)
       .map((el, i, arr) => {
         const largeArcFlag = 0;
-        console.log(el);
 
         const prev = getPreviousDiff(el, i, arr);
         const next = getNextDiff(el, i, arr);
@@ -62,8 +61,6 @@ export function roundCorners(string, r, round) {
             offset = -r;
           }
         }
-
-        console.log(el.marker, degrees);
         
         const prevPoint = [
           el.values.x + getOppositeLength(anglePrv, offset),
@@ -79,14 +76,14 @@ export function roundCorners(string, r, round) {
           case 'M': // moveTo x,y
           case 'L': // lineTo x,y
             // there only need be a curve if and only if the next marker is a corner
+            newCmds.push({
+              marker: el.marker,
+              values: {
+                x: parseFloat(prevPoint[0].toFixed(3)),
+                y: parseFloat(prevPoint[1].toFixed(3)),
+              }
+            });
             if (next.marker === 'L' || next.marker === 'M') {  
-              newCmds.push({
-                marker: el.marker,
-                values: {
-                  x: parseFloat(prevPoint[0].toFixed(3)),
-                  y: parseFloat(prevPoint[1].toFixed(3)),
-                }
-              });
 
               newCmds.push({
                 marker: 'A',
@@ -118,7 +115,6 @@ export function roundCorners(string, r, round) {
         }
       });
     })
-    console.log(newCmds);
 
     return {
       path: commandsToSvgPath(newCmds),
