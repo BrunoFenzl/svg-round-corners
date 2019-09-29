@@ -49,7 +49,7 @@ export function roundCorners(string, r, round) {
             
             // prevent arc crossing the next command
             if (r >= el.maxRadius) {
-              // r = el.maxRadius;
+              r = el.maxRadius;
             }
     
             // if ( degrees <= -270 || (degrees > 0 && degrees <= 90) ) { // sharp angles
@@ -103,7 +103,7 @@ export function roundCorners(string, r, round) {
               }
             });
 
-            if (next.marker === 'L') {  
+            if (next.marker === 'L' || next.marker === 'M') {  
 
               newCmds.push({
                 marker: 'A',
