@@ -79,7 +79,7 @@ export function roundCorners(string, r, round) {
               if (offset === Infinity) {
                 offset = r;
               }
-              console.log('obtuse degrees', offset);
+              console.log('obtuse degrees', offset, angle, anglePrv, angleNxt, r);
             }
             el.degrees = degrees;
             

@@ -65,15 +65,16 @@ export function getNextDiff(e, i, a) {
 
 export function convertToAbsolute(el, index, arr) {
   // get previous item or last one if its the first coordinate
-  const prev = arr[index - 1];// getPreviousDiff(el, index, arr);
-  console.log('prev', prev);
+  // const prev = arr[index - 1];
+  const prev = getPreviousDiff(el, index, arr);
   // First is always absolute
   if (index === 0) {
+    console.log('0 prev', prev);
     el.marker = el.marker.toUpperCase();
   }
   // debugger;
   // only need to test lowercase (relative) commands
-  if (el.marker === el.marker.toLowerCase() && index > 0) {
+  if (el.marker === el.marker.toLowerCase()) {
     // convert all to uppercase
     el.marker = el.marker.toUpperCase();
     switch (el.marker) {
@@ -374,7 +375,8 @@ export function getAdjacentLength(angle, hip) {
 }
 
 export function getTangentLength(angle, opposite) {
-  return opposite / Math.tan(angle);
+  console.log('getTangentLength', opposite, angle, Math.tan(angle), opposite / Math.tan(angle));
+  return opposite / Math.tan(angle) || 0;
 }
 
 export function arraysEqual(arr1, arr2) {
