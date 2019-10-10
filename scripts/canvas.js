@@ -24,7 +24,9 @@ export function roundCorners(string, r, round) {
       // overlapping or having really, really near coordinates
       .map(removeOverlapped);
 
+    console.log('subPathCmds length before', subPathCmds.length);
     removeLastCmdIfOverlapped(subPathCmds, subPathCmds.length - 1);
+    console.log('subPathCmds length after', subPathCmds.length);
     
     subPathCmds
       .filter((el) => !el.overlap)
@@ -51,6 +53,8 @@ export function roundCorners(string, r, round) {
             if (r >= el.maxRadius) {
               r = el.maxRadius;
             }
+
+            el.radius = r;
     
             // if ( degrees <= -270 || (degrees > 0 && degrees <= 90) ) { // sharp angles
             //   offset = getTangentLength(angle/2, r);
@@ -68,20 +72,18 @@ export function roundCorners(string, r, round) {
             if ( (degrees < 0 && degrees > -90) || (degrees > 180 && degrees <= 270) || (degrees <= -90 && degrees > -180) ) { // sharp angles
               offset = getTangentLength(angle/2, -r);
               sweepFlag = 0;
-              console.log('sharp offset', offset, r);
               if (offset === -Infinity || offset == 0) {
                 offset = -r;
               } 
-              console.log('sharp degrees', offset);
             } else { // obtuse angles
               offset = getTangentLength(angle/2, r );
               sweepFlag = 1;
               if (offset === Infinity) {
                 offset = r;
               }
-              console.log('obtuse degrees', offset, angle, anglePrv, angleNxt, r);
             }
             el.degrees = degrees;
+            
             
             const prevPoint = [
               el.values.x + getOppositeLength(anglePrv, offset),
@@ -104,10 +106,10 @@ export function roundCorners(string, r, round) {
             });
 
             if (next.marker === 'L' || next.marker === 'M') {  
-
               newCmds.push({
                 marker: 'A',
                 degrees: degrees.toFixed(3),
+                radius: r,
                 values: {
                   radiusX: r,
                   radiusY: r,
@@ -134,18 +136,15 @@ export function roundCorners(string, r, round) {
               if ( (degrees < 0 && degrees > -90) || (degrees > 180 && degrees <= 270) || (degrees <= -90 && degrees > -180) ) { // sharp angles
                 offset = getTangentLength(angle/2, -r);
                 sweepFlag = 0;
-                console.log('sharp offset', offset, r);
                 if (offset === -Infinity || offset == 0) {
                   offset = -r;
                 } 
-                console.log('sharp degrees', offset);
               } else { // obtuse angles
                 offset = getTangentLength(angle/2, r );
                 sweepFlag = 1;
                 if (offset === Infinity) {
                   offset = r;
                 }
-                console.log('obtuse degrees', offset);
               }
 
               const totalDistance = getDistance(
@@ -186,6 +185,7 @@ export function roundCorners(string, r, round) {
                   y: splitted[0][1],
                 },
               });
+
             } else {
               newCmds.push({ marker: el.marker, values: el.values });
             }

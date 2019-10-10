@@ -17,11 +17,16 @@ svgs.forEach(svg => {
   svg.setAttribute('d', rCorners.path);
   
   rCorners.commands.forEach((el, i) => {
-    const txt = document.createElementNS(xmlns, "text");
-    txt.setAttributeNS(null, 'x', el.values.x || 0);
-    txt.setAttributeNS(null, 'y', el.values.y || 0);
-    txt.appendChild(document.createTextNode(`${i} ${el.marker} ${el.degrees}`));
-    parent.appendChild(txt);
+    const circle = document.createElementNS(xmlns, "circle");
+    circle.setAttributeNS(null, 'cx', el.values.x || 0);
+    circle.setAttributeNS(null, 'cy', el.values.y || 0);
+    // circle.setAttributeNS(null, 'r', el.radius);
+    parent.appendChild(circle);
+    // const txt = document.createElementNS(xmlns, "text");
+    // txt.setAttributeNS(null, 'x', el.values.x || 0);
+    // txt.setAttributeNS(null, 'y', el.values.y || 0);
+    // txt.appendChild(document.createTextNode(`${i} ${el.marker} ${el.degrees}`));
+    // parent.appendChild(txt);
     if (el.degrees) {
     }
   });

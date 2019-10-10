@@ -64,15 +64,9 @@ export function getNextDiff(e, i, a) {
 }
 
 export function convertToAbsolute(el, index, arr) {
-  // get previous item or last one if its the first coordinate
-  // const prev = arr[index - 1];
-  const prev = getPreviousDiff(el, index, arr);
-  // First is always absolute
-  if (index === 0) {
-    console.log('0 prev', prev);
-    el.marker = el.marker.toUpperCase();
-  }
-  // debugger;
+  // get previous item or create one empty if it doesnt exist
+  let prev = arr[index - 1] || { values: { x: 0, y: 0 } };
+
   // only need to test lowercase (relative) commands
   if (el.marker === el.marker.toLowerCase()) {
     // convert all to uppercase
@@ -81,7 +75,6 @@ export function convertToAbsolute(el, index, arr) {
       case 'M': // move to x,y
         el.values.x += prev.values.x;
         el.values.y += prev.values.y;
-        console.log('M', el, prev);
         break;
       case 'L': // line to x,y
       case 'A':
@@ -119,7 +112,7 @@ export function convertToAbsolute(el, index, arr) {
       case 'Z':
         break;
     }
-  } else if (el.marker === el.marker.toUpperCase()) {
+  } else if (el.marker === el.marker.toUpperCase()) { // convert to L and add missing value
     switch (el.marker) {
       case 'H': // horizontalTo x
         el.marker = 'L';
@@ -133,7 +126,15 @@ export function convertToAbsolute(el, index, arr) {
   }
 
   if (el.marker === 'Z') {
-    const mBefore = arr.find((el, fi) => el.marker === 'M' && fi < index);
+    // find previous M recursively 
+    function rec(arr, i) {
+      if (arr[i].marker === 'M') {
+        return arr[i];
+      } else {
+        return rec(arr, i - 1);
+      }
+    } 
+    let mBefore = rec(arr, index);
     el.values.x = mBefore.values.x;
     el.values.y = mBefore.values.y;
   }
@@ -147,8 +148,14 @@ export function newCommands(marker, values) {
   switch (marker.toUpperCase()) {
     case 'M': // moveTo x,y
       for (let i = 0; i < values.length; i+=2) {
+        let m;
+        if (marker === marker.toUpperCase()) {
+          m = i === 0 ? 'M' : 'L';
+        } else {
+          m = i === 0 ? 'm' : 'l';
+        }
         cmds.push({
-          marker,
+          marker: m,
           values: {
             x: values[i],
             y: values[i + 1],
@@ -260,7 +267,7 @@ export function newCommands(marker, values) {
     case 'Z':
       cmds.push({
         marker,
-        values: {
+        values: { // values will be overriden
           x: 0,
           y: 0,
         }
@@ -326,6 +333,7 @@ export function removeLastCmdIfOverlapped(cmds, counter) {
   });
 
   if (cmds[counter].marker === 'L' && overlap) {
+    console.log('cmds[counter] overlap', cmds[counter], cmds[0]);
     cmds[counter].overlap = true;
     removeLastCmdIfOverlapped(cmds, counter - 1)
   }
@@ -333,7 +341,6 @@ export function removeLastCmdIfOverlapped(cmds, counter) {
   if (cmds[counter].marker === 'Z') {
     removeLastCmdIfOverlapped(cmds, counter - 1)
   }
-  
 }
 
 export function chunkSubPaths(el, index, arr) {
@@ -375,7 +382,6 @@ export function getAdjacentLength(angle, hip) {
 }
 
 export function getTangentLength(angle, opposite) {
-  console.log('getTangentLength', opposite, angle, Math.tan(angle), opposite / Math.tan(angle));
   return opposite / Math.tan(angle) || 0;
 }
 
