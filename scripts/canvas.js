@@ -1,4 +1,4 @@
-import { pathParser, getAngle, getTangentLength, getOppositeLength, getAdjacentLength, commandsToSvgPath, removeOverlapped, addMaxRadius, roundValues, getPreviousDiff, getNextDiff, removeLastCmdIfOverlapped, bsplit, getDistance } from "./utils.js";
+import { pathParser, getAngle, getTangentLength, getOppositeLength, getAdjacentLength, commandsToSvgPath, removeOverlapped, addMaxRadius, roundValues, getPreviousDiff, getNextDiff, removeLastCmdIfOverlapped, bsplit, getDistance, getOffset } from "./utils.js";
 
 export function roundCorners(string, r, round) {
   // create specific commands
@@ -20,71 +20,32 @@ export function roundCorners(string, r, round) {
 
   subpaths.forEach((subPathCmds) => {
     subPathCmds
-      // We are only excluding lineTo commands that may be
-      // overlapping or having really, really near coordinates
+      // We are only excluding lineTo commands that may be overlapping
       .map(removeOverlapped);
 
-    console.log('subPathCmds length before', subPathCmds.length);
     removeLastCmdIfOverlapped(subPathCmds, subPathCmds.length - 1);
-    console.log('subPathCmds length after', subPathCmds.length);
     
     subPathCmds
       .filter((el) => !el.overlap)
-      .map(addMaxRadius)
       .map((el, i, arr) => {
+        const largeArcFlag = 0;
+        const prev = getPreviousDiff(el, i, arr);
+        const next = getNextDiff(el, i, arr);
+        const anglePrv = getAngle(el.values, prev.values);
+        const angleNxt = getAngle(el.values, next.values);
+        const angle = angleNxt - anglePrv; // radians
+        const degrees = angle * (180/Math.PI);
+        // prevent arc crossing the next command
+        const maxRadius = addMaxRadius(el, prev, next);
+        const radius = Math.min(r, maxRadius);
+
+        const o = getOffset(angle, radius);
+        const offset = o.offset;
+        const sweepFlag = o.sweepFlag;
+        
         switch (el.marker) {
           case 'M': // moveTo x,y
           case 'L': // lineTo x,y
-            const largeArcFlag = 0;
-
-            const prev = getPreviousDiff(el, i, arr);
-            const next = getNextDiff(el, i, arr);
-    
-            const anglePrv = getAngle(el.values, prev.values);
-            const angleNxt = getAngle(el.values, next.values);
-            
-            const angle = angleNxt - anglePrv; // radians
-            let degrees = angle * (180/Math.PI); // degrees
-    
-            let offset;
-            let sweepFlag = 0;
-            
-            // prevent arc crossing the next command
-            if (r >= el.maxRadius) {
-              r = el.maxRadius;
-            }
-
-            el.radius = r;
-    
-            // if ( degrees <= -270 || (degrees > 0 && degrees <= 90) ) { // sharp angles
-            //   offset = getTangentLength(angle/2, r);
-            //   if (offset === Infinity) {
-            //     offset = r;
-            //   }
-            //   sweepFlag = 1;
-            // } else if ( (degrees > -270 && degrees <= 0) || degrees > 90 ) { // obtuse angles
-            //   offset = getTangentLength(angle/2, r );
-            //   if (offset === -Infinity) {
-            //     offset = -r;
-            //   }
-            // }
-    
-            if ( (degrees < 0 && degrees > -90) || (degrees > 180 && degrees <= 270) || (degrees <= -90 && degrees > -180) ) { // sharp angles
-              offset = getTangentLength(angle/2, -r);
-              sweepFlag = 0;
-              if (offset === -Infinity || offset == 0) {
-                offset = -r;
-              } 
-            } else { // obtuse angles
-              offset = getTangentLength(angle/2, r );
-              sweepFlag = 1;
-              if (offset === Infinity) {
-                offset = r;
-              }
-            }
-            el.degrees = degrees;
-            
-            
             const prevPoint = [
               el.values.x + getOppositeLength(anglePrv, offset),
               el.values.y + getAdjacentLength(anglePrv, offset)
@@ -94,11 +55,10 @@ export function roundCorners(string, r, round) {
               el.values.x + getOppositeLength(angleNxt, offset),
               el.values.y + getAdjacentLength(angleNxt, offset)
             ];
+
             // there only need be a curve if and only if the next marker is a corner
-            
             newCmds.push({
               marker: el.marker,
-              degrees: '',
               values: {
                 x: parseFloat(prevPoint[0].toFixed(3)),
                 y: parseFloat(prevPoint[1].toFixed(3)),
@@ -109,10 +69,10 @@ export function roundCorners(string, r, round) {
               newCmds.push({
                 marker: 'A',
                 degrees: degrees.toFixed(3),
-                radius: r,
+                radius: radius,
                 values: {
-                  radiusX: r,
-                  radiusY: r,
+                  radiusX: radius,
+                  radiusY: radius,
                   rotation: degrees,
                   largeArc: largeArcFlag,
                   sweep: sweepFlag,
@@ -120,33 +80,9 @@ export function roundCorners(string, r, round) {
                   y: parseFloat(nextPoint[1].toFixed(3)),
                 },
               });
-            } else if (next.marker === 'C') {
-              const largeArcFlag = 0;
-
-              const prev = getPreviousDiff(el, i, arr);
-      
-              const anglePrv = getAngle(el.values, prev.values);
-              const angleNxt = getAngle(el.values, next.values);
-              
-              const angle = angleNxt - anglePrv; // radians
-              let degrees = angle * (180/Math.PI); // degrees
-      
-              let sweepFlag = 0;
-              
-              if ( (degrees < 0 && degrees > -90) || (degrees > 180 && degrees <= 270) || (degrees <= -90 && degrees > -180) ) { // sharp angles
-                offset = getTangentLength(angle/2, -r);
-                sweepFlag = 0;
-                if (offset === -Infinity || offset == 0) {
-                  offset = -r;
-                } 
-              } else { // obtuse angles
-                offset = getTangentLength(angle/2, r );
-                sweepFlag = 1;
-                if (offset === Infinity) {
-                  offset = r;
-                }
-              }
-
+            } 
+            /*
+            else if (next.marker === 'C') {
               const totalDistance = getDistance(
                 { x:el.values.x, y: el.values.y },
                 { x:next.values.x, y: next.values.y }
@@ -186,11 +122,12 @@ export function roundCorners(string, r, round) {
                 },
               });
 
-            } else {
+            } 
+            else {
               newCmds.push({ marker: el.marker, values: el.values });
             }
+         */
             break;
-          
           case 'C': // cubic beziér: x1 y1, x2 y2, x y
           case 'H': // horizontal to x. Transformed to L in utils
           case 'V': // vertical to y. Transformed to L in utils
@@ -199,7 +136,7 @@ export function roundCorners(string, r, round) {
           case 'T': // short quadratic beziér: x y
           case 'A': // arc: rx ry x-axis-rotation large-arc-flag sweep-flag x y
           case 'Z': // close path
-            newCmds.push({ marker: el.marker, values: el.values, degrees: '' });
+            newCmds.push({ marker: el.marker, values: el.values });
             break;
         }
       });

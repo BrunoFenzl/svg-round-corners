@@ -56,7 +56,7 @@ export function getNextDiff(e, i, a) {
   const counter = i + 1;
   const next = a[mod(counter, a.length)];
 
-  if (next.overlap || next.marker === 'Z') {
+  if (next.marker === 'Z') {
     return getNextDiff(e, counter, a);
   } else {
     return next;
@@ -281,10 +281,8 @@ export function mod(x, m) {
   return (x % m + m) % m;
 }
 
-export function addMaxRadius(el, i, arr) {
-  const previous = getPreviousDiff(el, i, arr);
-  const next = getNextDiff(el, i, arr);
-  
+export function addMaxRadius(el, previous, next) {
+  console.log('el maxRadius', el, previous, next);
   const nxtSide = getDistance({
     x: el.values.x,
     y: el.values.y,
@@ -292,7 +290,7 @@ export function addMaxRadius(el, i, arr) {
   {
     x: next.values.x,
     y: next.values.y,
-  }); // half way through between both points
+  });
 
   const prvSide = getDistance({
     x: el.values.x,
@@ -301,10 +299,10 @@ export function addMaxRadius(el, i, arr) {
   {
     x: previous.values.x,
     y: previous.values.y,
-  }); // half way through between both points
-
-  el.maxRadius = Math.min(prvSide, nxtSide) / 2;
-  return el;
+  });
+  
+  // half way through between both points
+  return Math.min(prvSide, nxtSide) / 2;;
 }
 
 export function removeOverlapped(el, index, array) {
@@ -383,6 +381,31 @@ export function getAdjacentLength(angle, hip) {
 
 export function getTangentLength(angle, opposite) {
   return opposite / Math.tan(angle) || 0;
+}
+
+export function getOffset(angle, r) {
+  let offset;
+  let sweepFlag = 0;
+  let degrees = angle * (180/Math.PI);
+
+  if ( (degrees < 0 && degrees > -90) || (degrees > 180 && degrees <= 270) || (degrees <= -90 && degrees > -180) ) { // sharp angles
+    offset = getTangentLength(angle/2, -r);
+    sweepFlag = 0;
+    if (offset === -Infinity || offset == 0) {
+      offset = -r;
+    } 
+  } else { // obtuse angles
+    offset = getTangentLength(angle/2, r );
+    sweepFlag = 1;
+    if (offset === Infinity) {
+      offset = r;
+    }
+  }
+
+  return {
+    offset,
+    sweepFlag,
+  }
 }
 
 export function arraysEqual(arr1, arr2) {
