@@ -1,4 +1,4 @@
-import { pathParser, getAngle, getTangentLength, getOppositeLength, getAdjacentLength, commandsToSvgPath, removeOverlapped, addMaxRadius, roundValues, getPreviousDiff, getNextDiff, removeLastCmdIfOverlapped, bsplit, getDistance, getOffset } from "./utils.js";
+import { pathParser, getAngle, getTangentLength, getOppositeLength, getAdjacentLength, commandsToSvgPath, removeOverlapped, shortestSide, roundValues, getPreviousDiff, getNextDiff, removeLastCmdIfOverlapped, bsplit, getDistance, getOffset, getTangentNoHyp } from "./utils.js";
 
 export function roundCorners(string, r, round) {
   // create specific commands
@@ -13,7 +13,7 @@ export function roundCorners(string, r, round) {
       }
       subpaths[subpaths.length - 1].push(e);
     });
-  
+
   if (round) {
     roundValues(cmds, round);
   }
@@ -35,8 +35,12 @@ export function roundCorners(string, r, round) {
         const angleNxt = getAngle(el.values, next.values);
         const angle = angleNxt - anglePrv; // radians
         const degrees = angle * (180/Math.PI);
+
         // prevent arc crossing the next command
-        const maxRadius = addMaxRadius(el, prev, next);
+        const shortest = shortestSide(el, prev, next);
+        
+        const maxRadius = Math.abs(getTangentNoHyp(angle / 2, shortest / 2));
+        
         const radius = Math.min(r, maxRadius);
 
         const o = getOffset(angle, radius);

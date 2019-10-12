@@ -281,28 +281,12 @@ export function mod(x, m) {
   return (x % m + m) % m;
 }
 
-export function addMaxRadius(el, previous, next) {
-  console.log('el maxRadius', el, previous, next);
-  const nxtSide = getDistance({
-    x: el.values.x,
-    y: el.values.y,
-  },
-  {
-    x: next.values.x,
-    y: next.values.y,
-  });
-
-  const prvSide = getDistance({
-    x: el.values.x,
-    y: el.values.y,
-  },
-  {
-    x: previous.values.x,
-    y: previous.values.y,
-  });
+export function shortestSide(el, previous, next) {
+  const nxtSide = getDistance(el.values, next.values);
+  const prvSide = getDistance(previous.values, el.values);
   
   // half way through between both points
-  return Math.min(prvSide, nxtSide) / 2;;
+  return Math.min(prvSide, nxtSide);
 }
 
 export function removeOverlapped(el, index, array) {
@@ -365,8 +349,8 @@ export function getAngle(p1, p2) {
 }
 
 export function getDistance(p1, p2) {
-  const xDiff = p2.x - p1.x;
-  const yDiff = p2.y - p1.y;
+  const xDiff = p1.x - p2.x;
+  const yDiff = p1.y - p2.y;
 
   return Math.sqrt(Math.pow(xDiff, 2) + Math.pow(yDiff, 2));
 }
@@ -383,6 +367,9 @@ export function getTangentLength(angle, opposite) {
   return opposite / Math.tan(angle) || 0;
 }
 
+export function getTangentNoHyp(angle, opposite) {
+  return opposite * Math.tan(angle);
+}
 export function getOffset(angle, r) {
   let offset;
   let sweepFlag = 0;
@@ -483,7 +470,7 @@ export default {
   getNextDiff,
   convertToAbsolute,
   mod,
-  addMaxRadius,
+  shortestSide,
   removeOverlapped,
   removeLastCmdIfOverlapped,
   chunkSubPaths,
