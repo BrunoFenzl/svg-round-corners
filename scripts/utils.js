@@ -25,12 +25,7 @@ export function pathParser(str, round) {
       const vals = values ? values.map(parseFloat) : [];
       return newCommands(cmd.marker, vals);
     })
-    .map(convertToAbsolute)
-    .map(el => {
-      // console.log('after flat', el);
-      return el;
-    })
-
+    .map(convertToAbsolute);
 }
 
 export function roundValues(cmds, round) {
@@ -322,20 +317,44 @@ export function reverseMarkOverlapped(cmds, counter) {
 
   if (cmds[counter].marker === 'L' && overlap) {
     cmds[counter].overlap = true;
-    reverseMarkIfOverlapped(cmds, counter - 1)
+    reverseMarkOverlapped(cmds, counter - 1)
   }
   
   if (cmds[counter].marker === 'Z') {
-    reverseMarkIfOverlapped(cmds, counter - 1)
+    reverseMarkOverlapped(cmds, counter - 1)
   }
 }
 
 export function commandsToSvgPath(cmds) {
+  // when writing the commands back, the relevant values should be written in this order
+  const valuesOrder = [
+    'radiusX',
+    'radiusY',
+    'rotation',
+    'largeArc',
+    'sweep',
+    'x1',
+    'y1',
+    'x2',
+    'y2',
+    'x',
+    'y',
+  ]
   return cmds
     .map((cmd) => {
+      // defaults for empty string, so Z will output no values
       let d = '';
+      // filter any command that's not Z
       if (cmd.marker !== 'Z') {
-        d = Object.keys(cmd.values).map(key => cmd.values[key]).join(',');
+        // get all values from current command
+        const cmdKeys = Object.keys(cmd.values);
+        // filter the valuesOrder array for only the values that appear in the current command.
+        // We do this because valuesOrder guarantees that the relevant values will be in the right order
+        d = valuesOrder.filter(v => cmdKeys.indexOf(v) !== -1)
+          // replace the key with it's value
+          .map(key => cmd.values[key])
+          // and stringify everything together with a comma inbetween values
+          .join();
       }
       return `\n${cmd.marker} ${d}`;
     })
