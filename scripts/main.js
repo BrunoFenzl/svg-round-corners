@@ -9,6 +9,7 @@ const svgs = [...document.querySelectorAll('path')];
 svgs.forEach(svg => {
   const parent = svg.closest('svg');
   const clone = svg.cloneNode();
+  // clone.setAttributeNS(null, 'style', 'stroke: red; stroke-opacity:0');
   clone.setAttributeNS(null, 'style', 'stroke: red');
   svg.insertAdjacentElement('beforebegin', clone);
   

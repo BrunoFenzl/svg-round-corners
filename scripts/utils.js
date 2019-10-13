@@ -106,8 +106,14 @@ export function convertToAbsolute(el, index, arr) {
         el.values.y2 += prev.values.y;
         break;
       case 'Q':
+        el.values.x += prev.values.x;
+        el.values.y += prev.values.y;
+        el.values.x1 += prev.values.x;
+        el.values.y1 += prev.values.y;
         break;
       case 'T':
+        el.values.x += prev.values.x;
+        el.values.y += prev.values.y;
         break;
       case 'Z':
         break;
@@ -325,12 +331,6 @@ export function removeLastCmdIfOverlapped(cmds, counter) {
   }
 }
 
-export function chunkSubPaths(el, index, arr) {
-  return el.marker === 'M' ?
-    arr.splice(index, arr.findIndex((el, i) => el.marker === 'M' && i > index)) :
-    false;
-}
-
 export function commandsToSvgPath(cmds) {
   return cmds
     .map((cmd) => {
@@ -473,7 +473,6 @@ export default {
   shortestSide,
   removeOverlapped,
   removeLastCmdIfOverlapped,
-  chunkSubPaths,
   commandsToSvgPath,
   getAngle,
   getDistance,
