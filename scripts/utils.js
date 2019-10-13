@@ -295,7 +295,7 @@ export function shortestSide(el, previous, next) {
   return Math.min(prvSide, nxtSide);
 }
 
-export function removeOverlapped(el, index, array) {
+export function markOverlapped(el, index, array) {
   // Skip the first moveTo command and any other that's not a lineTo.
   if (index !== 0 && el.marker === 'L') {
     // It seems we have a lineTo here. Get the immediate previous command
@@ -314,20 +314,19 @@ export function removeOverlapped(el, index, array) {
   return el;
 }
 
-export function removeLastCmdIfOverlapped(cmds, counter) {  
+export function reverseMarkOverlapped(cmds, counter) {  
   const overlap = ['x', 'y'].every((key) => {
     // If any of x or y are different, we may draw a curve here and return true.
     return Math.round(Math.abs(cmds[counter].values[key] - cmds[0].values[key])) === 0;
   });
 
   if (cmds[counter].marker === 'L' && overlap) {
-    console.log('cmds[counter] overlap', cmds[counter], cmds[0]);
     cmds[counter].overlap = true;
-    removeLastCmdIfOverlapped(cmds, counter - 1)
+    reverseMarkIfOverlapped(cmds, counter - 1)
   }
   
   if (cmds[counter].marker === 'Z') {
-    removeLastCmdIfOverlapped(cmds, counter - 1)
+    reverseMarkIfOverlapped(cmds, counter - 1)
   }
 }
 
@@ -370,6 +369,7 @@ export function getTangentLength(angle, opposite) {
 export function getTangentNoHyp(angle, opposite) {
   return opposite * Math.tan(angle);
 }
+
 export function getOffset(angle, r) {
   let offset;
   let sweepFlag = 0;
@@ -393,20 +393,6 @@ export function getOffset(angle, r) {
     offset,
     sweepFlag,
   }
-}
-
-export function arraysEqual(arr1, arr2) {
-  if (arr1.length !== arr2.length) {
-    return false;
-  }
-
-  for(let i = arr1.length; i--;) {
-      if(arr1[i] !== arr2[i]) {
-        return false;
-      }
-  }
-
-  return true;
 }
 
 /**
@@ -462,23 +448,3 @@ export function bsplit(points, t0) {
   
   return [res1, res2];
 };
-
-export default {
-  pathParser,
-  roundValues,
-  getPreviousDiff,
-  getNextDiff,
-  convertToAbsolute,
-  mod,
-  shortestSide,
-  removeOverlapped,
-  removeLastCmdIfOverlapped,
-  commandsToSvgPath,
-  getAngle,
-  getDistance,
-  getOppositeLength,
-  getAdjacentLength,
-  getTangentLength,
-  arraysEqual,
-  bsplit,
-}

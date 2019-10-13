@@ -1,4 +1,4 @@
-import { pathParser, getAngle, getTangentLength, getOppositeLength, getAdjacentLength, commandsToSvgPath, removeOverlapped, shortestSide, roundValues, getPreviousDiff, getNextDiff, removeLastCmdIfOverlapped, bsplit, getDistance, getOffset, getTangentNoHyp } from "./utils.js";
+import { pathParser, getAngle, getTangentLength, getOppositeLength, getAdjacentLength, commandsToSvgPath, markOverlapped, shortestSide, roundValues, getPreviousDiff, getNextDiff, reverseMarkOverlapped, bsplit, getDistance, getOffset, getTangentNoHyp } from "./utils.js";
 
 export function roundCorners(string, r, round) {
   // create specific commands
@@ -21,9 +21,9 @@ export function roundCorners(string, r, round) {
   subpaths.forEach((subPathCmds) => {
     subPathCmds
       // We are only excluding lineTo commands that may be overlapping
-      .map(removeOverlapped);
+      .map(markOverlapped);
 
-    removeLastCmdIfOverlapped(subPathCmds, subPathCmds.length - 1);
+    reverseMarkOverlapped(subPathCmds, subPathCmds.length - 1);
     
     subPathCmds
       .filter((el) => !el.overlap)
@@ -35,12 +35,9 @@ export function roundCorners(string, r, round) {
         const angleNxt = getAngle(el.values, next.values);
         const angle = angleNxt - anglePrv; // radians
         const degrees = angle * (180/Math.PI);
-
         // prevent arc crossing the next command
         const shortest = shortestSide(el, prev, next);
-        
         const maxRadius = Math.abs(getTangentNoHyp(angle / 2, shortest / 2));
-        
         const radius = Math.min(r, maxRadius);
 
         const o = getOffset(angle, radius);
@@ -132,9 +129,9 @@ export function roundCorners(string, r, round) {
             }
          */
             break;
+          // case 'H': // horizontalTo x. Transformed to L in utils
+          // case 'V': // verticalTo y. Transformed to L in utils
           case 'C': // cubic beziér: x1 y1, x2 y2, x y
-          case 'H': // horizontal to x. Transformed to L in utils
-          case 'V': // vertical to y. Transformed to L in utils
           case 'S': // short beziér: x2 y2, x y
           case 'Q': // quadratic beziér: x1 y1, x y
           case 'T': // short quadratic beziér: x y
