@@ -6,7 +6,7 @@ export function roundCorners(string, r, round) {
   let subpaths = [];
   let newCmds = [];
   cmds
-    // split sub and compound paths
+    // split sub paths
     .forEach((e, i, a) => {
       if (e.marker === 'M') {
         subpaths.push([]);

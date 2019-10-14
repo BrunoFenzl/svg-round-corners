@@ -1,4 +1,12 @@
-export function pathParser(str, round) {
+
+/**
+ * Parses the given command string and generates an array of parsed commands.
+ * This function normalises all relative commands into absolute commands and
+ * transforms h, H, v, V to L commands
+ * @param {string} str Raw string from 'd' Attribute
+ * @returns {array} Array of normalised commands
+ */
+export function pathParser(str) {
   const markerRegEx = /[MmLlSsQqLlHhVvCcSsQqTtAaZz]/g;
   const digitRegEx = /-?[0-9]*\.?\d+/g;
   
@@ -28,6 +36,13 @@ export function pathParser(str, round) {
     .map(convertToAbsolute);
 }
 
+/**
+ * Round the values of each command to the given number of decimals.
+ * This function modifies the array in place.
+ * @param {array} cmds Sequence of commands
+ * @param {number} round Number of decimal place to be rounded
+ * @returns {array} Sequence of commands with their values rounded
+ */
 export function roundValues(cmds, round) {
   cmds.forEach(el => 
     Object.keys(el.values).forEach(key => 
@@ -282,14 +297,6 @@ export function mod(x, m) {
   return (x % m + m) % m;
 }
 
-export function shortestSide(el, previous, next) {
-  const nxtSide = getDistance(el.values, next.values);
-  const prvSide = getDistance(previous.values, el.values);
-  
-  // half way through between both points
-  return Math.min(prvSide, nxtSide);
-}
-
 export function markOverlapped(el, index, array) {
   // Skip the first moveTo command and any other that's not a lineTo.
   if (index !== 0 && el.marker === 'L') {
@@ -325,47 +332,36 @@ export function reverseMarkOverlapped(cmds, counter) {
   }
 }
 
-export function commandsToSvgPath(cmds) {
-  // when writing the commands back, the relevant values should be written in this order
-  const valuesOrder = [
-    'radiusX',
-    'radiusY',
-    'rotation',
-    'largeArc',
-    'sweep',
-    'x1',
-    'y1',
-    'x2',
-    'y2',
-    'x',
-    'y',
-  ]
-  return cmds
-    .map((cmd) => {
-      // defaults for empty string, so Z will output no values
-      let d = '';
-      // filter any command that's not Z
-      if (cmd.marker !== 'Z') {
-        // get all values from current command
-        const cmdKeys = Object.keys(cmd.values);
-        // filter the valuesOrder array for only the values that appear in the current command.
-        // We do this because valuesOrder guarantees that the relevant values will be in the right order
-        d = valuesOrder.filter(v => cmdKeys.indexOf(v) !== -1)
-          // replace the key with it's value
-          .map(key => cmd.values[key])
-          // and stringify everything together with a comma inbetween values
-          .join();
-      }
-      return `\n${cmd.marker} ${d}`;
-    })
-    .join(' ')
-    .trim();
+/**
+ * Calculates the distance between the current command and
+ * it's direct neighbours and returns the nearest distance
+ * @param {any} el current command
+ * @param {any} previous previous command
+ * @param {any} next next command
+ * @returns {number} the distance to teh nearest command
+ */
+export function shortestSide(el, previous, next) {
+  const nxtSide = getDistance(el.values, next.values);
+  const prvSide = getDistance(previous.values, el.values);
+  return Math.min(prvSide, nxtSide);
 }
 
+/**
+ * Calculates the angle between two points
+ * @param {any} p1 Object with x and y properties
+ * @param {any} p2 Object with x and y properties
+ * @returns {number} Angle in radians
+ */
 export function getAngle(p1, p2) {
   return Math.atan2(p2.x - p1.x, p2.y - p1.y);
 }
 
+/**
+ * Calculates the distance between two points
+ * @param {any} p1 Object with x and y properties
+ * @param {any} p2 Object with x and y properties
+ * @returns {number} Distance between points
+ */
 export function getDistance(p1, p2) {
   const xDiff = p1.x - p2.x;
   const yDiff = p1.y - p2.y;
@@ -373,34 +369,75 @@ export function getDistance(p1, p2) {
   return Math.sqrt(Math.pow(xDiff, 2) + Math.pow(yDiff, 2));
 }
 
+/**
+ * Calculates the length of the opposite side
+ * of a given angle using the hypothenuse
+ * @param {number} angle Angle in radians
+ * @param {number} hip Hypothenuse
+ * @returns {number} Length of the opposite side
+ */
 export function getOppositeLength(angle, hip) {
   return Math.sin(angle) * hip;
 }
 
+/**
+ * Calculates the length of the adjacent side
+ * of a given angle using the hypothenuse
+ * @param {number} angle Angle in radians
+ * @param {number} hip Hypothenuse
+ * @returns {number} Length of the adjacent side
+ */
 export function getAdjacentLength(angle, hip) {
   return Math.cos(angle) * hip;
 }
 
+/**
+ * Calculates the adjacent side of the given
+ * angle using the angle's opposite side
+ * @param {number} angle Angle in radians
+ * @param {number} opposite opposite side
+ * @returns {number} Length of the adjacent side
+ */
 export function getTangentLength(angle, opposite) {
   return opposite / Math.tan(angle) || 0;
 }
 
-export function getTangentNoHyp(angle, opposite) {
-  return opposite * Math.tan(angle);
+/**
+ * Calculates the opposite side of the given
+ * angle using the angle's adjacent side
+ * @param {number} angle Angle in radians
+ * @param {number} adjacent adjacent side
+ * @returns {number} Length of the opposite side
+ */
+export function getTangentNoHyp(angle, adjacent) {
+  return adjacent * Math.tan(angle);
 }
 
+/**
+ * Calculates the length that should be used to shorten the
+ * distance between commands based on the given radius value
+ * @param {number} angle Angle between points
+ * @param {number} r Radius of the arc that should fit inside the triangle
+ * @returns {any} Object containing offset and the arc's sweepFlag
+ */
 export function getOffset(angle, r) {
   let offset;
   let sweepFlag = 0;
   let degrees = angle * (180/Math.PI);
 
-  if ( (degrees < 0 && degrees > -90) || (degrees > 180 && degrees <= 270) || (degrees <= -90 && degrees > -180) ) { // sharp angles
+  // sharp angles
+  if (
+    (degrees < 0 && degrees > -90) ||
+    (degrees > 180 && degrees <= 270) ||
+    (degrees <= -90 && degrees > -180)
+  ) {
     offset = getTangentLength(angle/2, -r);
     sweepFlag = 0;
     if (offset === -Infinity || offset == 0) {
       offset = -r;
-    } 
-  } else { // obtuse angles
+    }
+  // obtuse angles
+  } else {
     offset = getTangentLength(angle/2, r );
     sweepFlag = 1;
     if (offset === Infinity) {
@@ -415,8 +452,9 @@ export function getOffset(angle, r) {
 }
 
 /**
- * http://bl.ocks.org/balint42/8c9310605df9305c42b3
+ * Originally taken from: http://bl.ocks.org/balint42/8c9310605df9305c42b3
  * @brief De Casteljau's algorithm splitting n-th degree Bezier curve
+ * @returns {array} 
  */
 export function bsplit(points, t0) {
   const n = points.length - 1; // number of control points
@@ -467,3 +505,47 @@ export function bsplit(points, t0) {
   
   return [res1, res2];
 };
+
+/**
+ * Concatenates commands in a string and ensures that each
+ * value from each command is printed in the right order
+ * @param {array} cmds Array of svg commands
+ * @returns {string} String containing all commands formated ready for the 'd' Attribute
+ */
+export function commandsToSvgPath(cmds) {
+  // when writing the commands back, the relevant values should be written in this order
+  const valuesOrder = [
+    'radiusX',
+    'radiusY',
+    'rotation',
+    'largeArc',
+    'sweep',
+    'x1',
+    'y1',
+    'x2',
+    'y2',
+    'x',
+    'y',
+  ];
+
+  return cmds
+    .map((cmd) => {
+      // defaults for empty string, so Z will output no values
+      let d = '';
+      // filter any command that's not Z
+      if (cmd.marker !== 'Z') {
+        // get all values from current command
+        const cmdKeys = Object.keys(cmd.values);
+        // filter the valuesOrder array for only the values that appear in the current command.
+        // We do this because valuesOrder guarantees that the relevant values will be in the right order
+        d = valuesOrder.filter(v => cmdKeys.indexOf(v) !== -1)
+          // replace the key with it's value
+          .map(key => cmd.values[key])
+          // and stringify everything together with a comma inbetween values
+          .join();
+      }
+      return `\n${cmd.marker} ${d}`;
+    })
+    .join(' ')
+    .trim();
+}
