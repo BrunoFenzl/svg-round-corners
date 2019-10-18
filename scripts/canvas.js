@@ -1,10 +1,58 @@
-import { pathParser, getAngle, getTangentLength, getOppositeLength, getAdjacentLength, commandsToSvgPath, markOverlapped, shortestSide, roundValues, getPreviousDiff, getNextDiff, reverseMarkOverlapped, bsplit, getDistance, getOffset, getTangentNoHyp } from "./utils.js";
+import { getAngle, getOppositeLength, getAdjacentLength, commandsToSvgPath, markOverlapped, shortestSide, roundValues, getPreviousNoZ, getNextNoZ, reverseMarkOverlapped, bsplit, getDistance, getOffset, getTangentNoHyp, newCommands, convertToAbsolute } from "./utils.js";
 
-export function roundCorners(string, r, round) {
-  // create specific commands
-  let cmds = [...pathParser(string)];
+/**
+ * Parses the given command string and generates an array of parsed commands.
+ * This function normalises all relative commands into absolute commands and
+ * transforms h, H, v, V to L commands
+ * @param {string} str Raw string from 'd' Attribute
+ * @returns {array} Array of normalised commands
+ */
+function parsePath(str) {
+  const markerRegEx = /[MmLlSsQqLlHhVvCcSsQqTtAaZz]/g;
+  const digitRegEx = /-?[0-9]*\.?\d+/g;
+  
+  return [...str.matchAll(markerRegEx)]
+    .map((match) => {
+      return { marker: match[0], index: match.index };
+    })
+    .reduceRight((acc, cur) => {
+      const chunk = str.substring(
+        cur.index,
+        acc.length ? acc[acc.length - 1].index : str.length
+      );
+      return acc.concat([
+        {
+          marker: cur.marker,
+          index: cur.index,
+          chunk: chunk.length > 0 ? chunk.substr(1, chunk.length - 1) : chunk
+        }
+      ]);
+    }, [])
+    .reverse()
+    .flatMap((cmd) => {
+      const values = cmd.chunk.match(digitRegEx);
+      const vals = values ? values.map(parseFloat) : [];
+      return newCommands(cmd.marker, vals);
+    })
+    .map(convertToAbsolute);
+}
+
+/**
+ * Iterates through an array of normalised commands and insert arcs where applicable.
+ * This function modifies the array in place.
+ * @param {array} cmds Array with commands to be modified
+ * @param {number} r Expected radius of the arcs.
+ * @param {number} round Number of decimal digits to round values
+ * @returns {array} Sequence of commands containing arcs in place or corners
+ */
+function roundCommands(cmds, r, round) {
   let subpaths = [];
   let newCmds = [];
+
+  if (round) {
+    roundValues(cmds, round);
+  }
+
   cmds
     // split sub paths
     .forEach((e, i, a) => {
@@ -13,10 +61,6 @@ export function roundCorners(string, r, round) {
       }
       subpaths[subpaths.length - 1].push(e);
     });
-
-  if (round) {
-    roundValues(cmds, round);
-  }
 
   subpaths.forEach((subPathCmds) => {
     subPathCmds
@@ -29,8 +73,8 @@ export function roundCorners(string, r, round) {
       .filter((el) => !el.overlap)
       .map((el, i, arr) => {
         const largeArcFlag = 0;
-        const prev = getPreviousDiff(el, i, arr);
-        const next = getNextDiff(el, i, arr);
+        const prev = getPreviousNoZ(el, i, arr);
+        const next = getNextNoZ(el, i, arr);
         const anglePrv = getAngle(el.values, prev.values);
         const angleNxt = getAngle(el.values, next.values);
         const angle = angleNxt - anglePrv; // radians
@@ -147,4 +191,22 @@ export function roundCorners(string, r, round) {
       path: commandsToSvgPath(newCmds),
       commands: newCmds
     };
+}
+
+/**
+ * This is a shorthand for parsePath() and roundCommands().
+ * You get the end result in one function call.
+ * @param {string} str Raw string with commands from the path element
+ * @param {number} r Expected radius of the arcs.
+ * @param {number} round Number of decimal digits to round values
+ * @returns {string} New commands sequence with rounded corners 
+ */
+function roundCorners(str, r, round) {
+  return roundCommands([...parsePath(str)], r, round);
+}
+
+export {
+  parsePath,
+  roundCommands,
+  roundCorners,
 }

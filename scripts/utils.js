@@ -1,41 +1,3 @@
-
-/**
- * Parses the given command string and generates an array of parsed commands.
- * This function normalises all relative commands into absolute commands and
- * transforms h, H, v, V to L commands
- * @param {string} str Raw string from 'd' Attribute
- * @returns {array} Array of normalised commands
- */
-export function pathParser(str) {
-  const markerRegEx = /[MmLlSsQqLlHhVvCcSsQqTtAaZz]/g;
-  const digitRegEx = /-?[0-9]*\.?\d+/g;
-  
-  return [...str.matchAll(markerRegEx)]
-    .map((match) => {
-      return { marker: match[0], index: match.index };
-    })
-    .reduceRight((acc, cur) => {
-      const chunk = str.substring(
-        cur.index,
-        acc.length ? acc[acc.length - 1].index : str.length
-      );
-      return acc.concat([
-        {
-          marker: cur.marker,
-          index: cur.index,
-          chunk: chunk.length > 0 ? chunk.substr(1, chunk.length - 1) : chunk
-        }
-      ]);
-    }, [])
-    .reverse()
-    .flatMap((cmd) => {
-      const values = cmd.chunk.match(digitRegEx);
-      const vals = values ? values.map(parseFloat) : [];
-      return newCommands(cmd.marker, vals);
-    })
-    .map(convertToAbsolute);
-}
-
 /**
  * Round the values of each command to the given number of decimals.
  * This function modifies the array in place.
@@ -51,28 +13,49 @@ export function roundValues(cmds, round) {
   )
 }
 
-export function getPreviousDiff(e, i, a) {
+/**
+ * Get previous element in array, wrapping if index is out of bounds and skipping if the command is 'Z'
+ * @param {any} e Command object 
+ * @param {number} i Current index
+ * @param {array} a Array being iterated
+ * @returns {any} Previous element that doesn't have a 'Z' marker
+ */
+export function getPreviousNoZ(e, i, a) {
   const counter = i - 1;
   const previous = a[mod(counter, a.length)];
 
   if (previous.marker !== 'Z') {
     return previous;
   } else {
-    return getPreviousDiff(e, counter, a);
+    return getPreviousNoZ(e, counter, a);
   }
 }
 
-export function getNextDiff(e, i, a) {
+/**
+ * Get next element in array, wrapping if index is out of bounds and skipping if the command is 'Z'
+ * @param {any} e Command object 
+ * @param {number} i Current index
+ * @param {array} a Array being iterated
+ * @returns {any} Next element that doesn't have a 'Z' marker
+ */
+export function getNextNoZ(e, i, a) {
   const counter = i + 1;
   const next = a[mod(counter, a.length)];
 
   if (next.marker === 'Z') {
-    return getNextDiff(e, counter, a);
+    return getNextNoZ(e, counter, a);
   } else {
     return next;
   }
 }
 
+/**
+ * Iterate through an array and convert all commands to absolute.
+ * This function should be used as argument in a map() call.
+ * @param {any} el Current element in this iteration
+ * @param {number} index Current iteration index
+ * @param {array} arr Array being iterated
+ */
 export function convertToAbsolute(el, index, arr) {
   // get previous item or create one empty if it doesnt exist
   let prev = arr[index - 1] || { values: { x: 0, y: 0 } };
@@ -128,7 +111,8 @@ export function convertToAbsolute(el, index, arr) {
       case 'Z':
         break;
     }
-  } else if (el.marker === el.marker.toUpperCase()) { // convert to L and add missing value
+  // convert to L and add missing value
+  } else if (el.marker === el.marker.toUpperCase()) {
     switch (el.marker) {
       case 'H': // horizontalTo x
         el.marker = 'L';
@@ -141,15 +125,20 @@ export function convertToAbsolute(el, index, arr) {
     }
   }
 
+  /* 
+    'Z' commands don't have any coordinate but we are cloning the
+    start coordinates defined by this subpath initial 'M' so it's
+    easier to do the stitching latter.
+  */
   if (el.marker === 'Z') {
-    // find previous M recursively 
+    // find previous 'M' recursively
     function rec(arr, i) {
       if (arr[i].marker === 'M') {
         return arr[i];
       } else {
         return rec(arr, i - 1);
       }
-    } 
+    }
     let mBefore = rec(arr, index);
     el.values.x = mBefore.values.x;
     el.values.y = mBefore.values.y;
@@ -158,9 +147,17 @@ export function convertToAbsolute(el, index, arr) {
   return el;
 }
 
+/**
+ * Takes one marker and an array of numbers and creates one or more command objects with the right
+ * properties based on the given marker. Some markers allow for multiple coordinates for one single command.
+ * This function takes care of splitting multiple coordinates per command and generating the 
+ * @param {string} marker Letter of the command being generated
+ * @param {array} values Array of numbers to be splitted and parsed into the right properties
+ * @returns {array} Array of commands. Most of the time will have only one item
+ */
 export function newCommands(marker, values) {
   const cmds = [];
-  
+
   switch (marker.toUpperCase()) {
     case 'M': // moveTo x,y
       for (let i = 0; i < values.length; i+=2) {
@@ -283,7 +280,7 @@ export function newCommands(marker, values) {
     case 'Z':
       cmds.push({
         marker,
-        values: { // values will be overriden
+        values: { // values will be overriden later by convertToAbsolute()
           x: 0,
           y: 0,
         }
@@ -293,10 +290,24 @@ export function newCommands(marker, values) {
   return cmds;
 }
 
+/**
+ * Takes an index and a length and returns the index wrapped if out of bounds.
+ * @param {number} x Index
+ * @param {number} m Length
+ * @returns {number} Index or wrapped index if out bounds
+ */
 export function mod(x, m) {
   return (x % m + m) % m;
 }
 
+/**
+ * Compares the given element with it's predecessor and checks if their end position is the same.
+ * If it is, add a boolean 'overlap' property to the element. This function modifies the array elements in place
+ * @param {any} el Command object
+ * @param {number} index Current iteration index
+ * @param {array} array Array being iterated
+ * @returns {any} Command object
+ */
 export function markOverlapped(el, index, array) {
   // Skip the first moveTo command and any other that's not a lineTo.
   if (index !== 0 && el.marker === 'L') {
@@ -304,7 +315,7 @@ export function markOverlapped(el, index, array) {
     let previous = array[index - 1];
     // …and check if the x, y coordinates are equals.
     const overlap = ['x', 'y'].every((key) => {
-      // If any of x or y are different, we may draw a curve here and return true.
+      // If x AND y overlap, this command should be skipped
       return Math.round(Math.abs(previous.values[key] - el.values[key])) === 0;
     });
 
@@ -316,9 +327,15 @@ export function markOverlapped(el, index, array) {
   return el;
 }
 
-export function reverseMarkOverlapped(cmds, counter) {  
+/**
+ * Similar purpose as markOverlapped(). Recursively marks trailling commands that have the same end position as the inital 'M'.
+ * This function modifies the array in place.
+ * @param {array} cmds Commands array
+ * @param {number} index Optional start index counting backwards. Ssually the last index from teh array
+ */
+export function reverseMarkOverlapped(cmds, counter) { 
   const overlap = ['x', 'y'].every((key) => {
-    // If any of x or y are different, we may draw a curve here and return true.
+    // If x AND y overlap, this command should be skipped
     return Math.round(Math.abs(cmds[counter].values[key] - cmds[0].values[key])) === 0;
   });
 
