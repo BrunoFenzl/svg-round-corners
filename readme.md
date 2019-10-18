@@ -14,30 +14,30 @@ This library is not yet in NPM. It will be released soon! In the meanwhile, you 
 ```
 parsePath(pathString)
 ```
-*Parameters*
-*pathString: string from the 'd' attribute of a <path> element.
+**Parameters**
+* pathString: String from the 'd' attribute of a <path> element.
 
-*Returns*
+**Returns**
 Array containing parsed and normalised (absolute) commands.
 
 ```
 roundCommands(commandsArray, radius, round)
 ```
-*Parameters*
-*commandsArray: parsed commands from a path element, from example the output of parsePath().
-*radius: Expected radius of the arcs
-*round: number of decimal digits to round each value inside commands
+**Parameters**
+* commandsArray: Parsed commands from a path element, from example the output of parsePath().
+* radius: Expected radius of the arcs
+* round: Number of decimal digits to round each value inside commands
 
-*Returns*
-string containing parsed and normalised (absolute) commands.
+**Returns**
+String containing parsed and normalised (absolute) commands.
 
 ```
 roundCorners(pathString, radius, round)
 ```
-*Parameters*
-*pathString: string from the 'd' attribute of a <path> element.
-*radius: Expected radius of the arcs
-*round: number of decimal digits to round each value inside commands
+**Parameters**
+* pathString: String from the 'd' attribute of a <path> element.
+* radius: Expected radius of the arcs
+* round: Number of decimal digits to round each value inside commands
 
-*Returns*
-string containing parsed and normalised (absolute) commands.
+**Returns**
+String containing parsed and normalised (absolute) commands.
