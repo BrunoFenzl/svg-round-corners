@@ -1,33 +1,10 @@
-export function pathParser(str, round) {
-  const markerRegEx = /[MmLlSsQqLlHhVvCcSsQqTtAaZz]/g;
-  const digitRegEx = /-?[0-9]*\.?\d+/g;
-  
-  return [...str.matchAll(markerRegEx)]
-    .map((match) => {
-      return { marker: match[0], index: match.index };
-    })
-    .reduceRight((acc, cur) => {
-      const chunk = str.substring(
-        cur.index,
-        acc.length ? acc[acc.length - 1].index : str.length
-      );
-      return acc.concat([
-        {
-          marker: cur.marker,
-          index: cur.index,
-          chunk: chunk.length > 0 ? chunk.substr(1, chunk.length - 1) : chunk
-        }
-      ]);
-    }, [])
-    .reverse()
-    .flatMap((cmd) => {
-      const values = cmd.chunk.match(digitRegEx);
-      const vals = values ? values.map(parseFloat) : [];
-      return newCommands(cmd.marker, vals);
-    })
-    .map(convertToAbsolute);
-}
-
+/**
+ * Round the values of each command to the given number of decimals.
+ * This function modifies the array in place.
+ * @param {array} cmds Sequence of commands
+ * @param {number} round Number of decimal place to be rounded
+ * @returns {array} Sequence of commands with their values rounded
+ */
 export function roundValues(cmds, round) {
   cmds.forEach(el => 
     Object.keys(el.values).forEach(key => 
@@ -36,28 +13,49 @@ export function roundValues(cmds, round) {
   )
 }
 
-export function getPreviousDiff(e, i, a) {
+/**
+ * Get previous element in array, wrapping if index is out of bounds and skipping if the command is 'Z'
+ * @param {any} e Command object 
+ * @param {number} i Current index
+ * @param {array} a Array being iterated
+ * @returns {any} Previous element that doesn't have a 'Z' marker
+ */
+export function getPreviousNoZ(e, i, a) {
   const counter = i - 1;
   const previous = a[mod(counter, a.length)];
 
   if (previous.marker !== 'Z') {
     return previous;
   } else {
-    return getPreviousDiff(e, counter, a);
+    return getPreviousNoZ(e, counter, a);
   }
 }
 
-export function getNextDiff(e, i, a) {
+/**
+ * Get next element in array, wrapping if index is out of bounds and skipping if the command is 'Z'
+ * @param {any} e Command object 
+ * @param {number} i Current index
+ * @param {array} a Array being iterated
+ * @returns {any} Next element that doesn't have a 'Z' marker
+ */
+export function getNextNoZ(e, i, a) {
   const counter = i + 1;
   const next = a[mod(counter, a.length)];
 
   if (next.marker === 'Z') {
-    return getNextDiff(e, counter, a);
+    return getNextNoZ(e, counter, a);
   } else {
     return next;
   }
 }
 
+/**
+ * Iterate through an array and convert all commands to absolute.
+ * This function should be used as argument in a map() call.
+ * @param {any} el Current element in this iteration
+ * @param {number} index Current iteration index
+ * @param {array} arr Array being iterated
+ */
 export function convertToAbsolute(el, index, arr) {
   // get previous item or create one empty if it doesnt exist
   let prev = arr[index - 1] || { values: { x: 0, y: 0 } };
@@ -113,7 +111,8 @@ export function convertToAbsolute(el, index, arr) {
       case 'Z':
         break;
     }
-  } else if (el.marker === el.marker.toUpperCase()) { // convert to L and add missing value
+  // convert to L and add missing value
+  } else if (el.marker === el.marker.toUpperCase()) {
     switch (el.marker) {
       case 'H': // horizontalTo x
         el.marker = 'L';
@@ -126,15 +125,20 @@ export function convertToAbsolute(el, index, arr) {
     }
   }
 
+  /* 
+    'Z' commands don't have any coordinate but we are cloning the
+    start coordinates defined by this subpath initial 'M' so it's
+    easier to do the stitching latter.
+  */
   if (el.marker === 'Z') {
-    // find previous M recursively 
+    // find previous 'M' recursively
     function rec(arr, i) {
       if (arr[i].marker === 'M') {
         return arr[i];
       } else {
         return rec(arr, i - 1);
       }
-    } 
+    }
     let mBefore = rec(arr, index);
     el.values.x = mBefore.values.x;
     el.values.y = mBefore.values.y;
@@ -143,9 +147,17 @@ export function convertToAbsolute(el, index, arr) {
   return el;
 }
 
+/**
+ * Takes one marker and an array of numbers and creates one or more command objects with the right
+ * properties based on the given marker. Some markers allow for multiple coordinates for one single command.
+ * This function takes care of splitting multiple coordinates per command and generating the 
+ * @param {string} marker Letter of the command being generated
+ * @param {array} values Array of numbers to be splitted and parsed into the right properties
+ * @returns {array} Array of commands. Most of the time will have only one item
+ */
 export function newCommands(marker, values) {
   const cmds = [];
-  
+
   switch (marker.toUpperCase()) {
     case 'M': // moveTo x,y
       for (let i = 0; i < values.length; i+=2) {
@@ -268,7 +280,7 @@ export function newCommands(marker, values) {
     case 'Z':
       cmds.push({
         marker,
-        values: { // values will be overriden
+        values: { // values will be overriden later by convertToAbsolute()
           x: 0,
           y: 0,
         }
@@ -278,18 +290,24 @@ export function newCommands(marker, values) {
   return cmds;
 }
 
+/**
+ * Takes an index and a length and returns the index wrapped if out of bounds.
+ * @param {number} x Index
+ * @param {number} m Length
+ * @returns {number} Index or wrapped index if out bounds
+ */
 export function mod(x, m) {
   return (x % m + m) % m;
 }
 
-export function shortestSide(el, previous, next) {
-  const nxtSide = getDistance(el.values, next.values);
-  const prvSide = getDistance(previous.values, el.values);
-  
-  // half way through between both points
-  return Math.min(prvSide, nxtSide);
-}
-
+/**
+ * Compares the given element with it's predecessor and checks if their end position is the same.
+ * If it is, add a boolean 'overlap' property to the element. This function modifies the array elements in place
+ * @param {any} el Command object
+ * @param {number} index Current iteration index
+ * @param {array} array Array being iterated
+ * @returns {any} Command object
+ */
 export function markOverlapped(el, index, array) {
   // Skip the first moveTo command and any other that's not a lineTo.
   if (index !== 0 && el.marker === 'L') {
@@ -297,7 +315,7 @@ export function markOverlapped(el, index, array) {
     let previous = array[index - 1];
     // …and check if the x, y coordinates are equals.
     const overlap = ['x', 'y'].every((key) => {
-      // If any of x or y are different, we may draw a curve here and return true.
+      // If x AND y overlap, this command should be skipped
       return Math.round(Math.abs(previous.values[key] - el.values[key])) === 0;
     });
 
@@ -309,9 +327,15 @@ export function markOverlapped(el, index, array) {
   return el;
 }
 
-export function reverseMarkOverlapped(cmds, counter) {  
+/**
+ * Similar purpose as markOverlapped(). Recursively marks trailling commands that have the same end position as the inital 'M'.
+ * This function modifies the array in place.
+ * @param {array} cmds Commands array
+ * @param {number} index Optional start index counting backwards. Ssually the last index from teh array
+ */
+export function reverseMarkOverlapped(cmds, counter) { 
   const overlap = ['x', 'y'].every((key) => {
-    // If any of x or y are different, we may draw a curve here and return true.
+    // If x AND y overlap, this command should be skipped
     return Math.round(Math.abs(cmds[counter].values[key] - cmds[0].values[key])) === 0;
   });
 
@@ -325,47 +349,36 @@ export function reverseMarkOverlapped(cmds, counter) {
   }
 }
 
-export function commandsToSvgPath(cmds) {
-  // when writing the commands back, the relevant values should be written in this order
-  const valuesOrder = [
-    'radiusX',
-    'radiusY',
-    'rotation',
-    'largeArc',
-    'sweep',
-    'x1',
-    'y1',
-    'x2',
-    'y2',
-    'x',
-    'y',
-  ]
-  return cmds
-    .map((cmd) => {
-      // defaults for empty string, so Z will output no values
-      let d = '';
-      // filter any command that's not Z
-      if (cmd.marker !== 'Z') {
-        // get all values from current command
-        const cmdKeys = Object.keys(cmd.values);
-        // filter the valuesOrder array for only the values that appear in the current command.
-        // We do this because valuesOrder guarantees that the relevant values will be in the right order
-        d = valuesOrder.filter(v => cmdKeys.indexOf(v) !== -1)
-          // replace the key with it's value
-          .map(key => cmd.values[key])
-          // and stringify everything together with a comma inbetween values
-          .join();
-      }
-      return `\n${cmd.marker} ${d}`;
-    })
-    .join(' ')
-    .trim();
+/**
+ * Calculates the distance between the current command and
+ * it's direct neighbours and returns the nearest distance
+ * @param {any} el current command
+ * @param {any} previous previous command
+ * @param {any} next next command
+ * @returns {number} the distance to teh nearest command
+ */
+export function shortestSide(el, previous, next) {
+  const nxtSide = getDistance(el.values, next.values);
+  const prvSide = getDistance(previous.values, el.values);
+  return Math.min(prvSide, nxtSide);
 }
 
+/**
+ * Calculates the angle between two points
+ * @param {any} p1 Object with x and y properties
+ * @param {any} p2 Object with x and y properties
+ * @returns {number} Angle in radians
+ */
 export function getAngle(p1, p2) {
   return Math.atan2(p2.x - p1.x, p2.y - p1.y);
 }
 
+/**
+ * Calculates the distance between two points
+ * @param {any} p1 Object with x and y properties
+ * @param {any} p2 Object with x and y properties
+ * @returns {number} Distance between points
+ */
 export function getDistance(p1, p2) {
   const xDiff = p1.x - p2.x;
   const yDiff = p1.y - p2.y;
@@ -373,34 +386,75 @@ export function getDistance(p1, p2) {
   return Math.sqrt(Math.pow(xDiff, 2) + Math.pow(yDiff, 2));
 }
 
+/**
+ * Calculates the length of the opposite side
+ * of a given angle using the hypothenuse
+ * @param {number} angle Angle in radians
+ * @param {number} hip Hypothenuse
+ * @returns {number} Length of the opposite side
+ */
 export function getOppositeLength(angle, hip) {
   return Math.sin(angle) * hip;
 }
 
+/**
+ * Calculates the length of the adjacent side
+ * of a given angle using the hypothenuse
+ * @param {number} angle Angle in radians
+ * @param {number} hip Hypothenuse
+ * @returns {number} Length of the adjacent side
+ */
 export function getAdjacentLength(angle, hip) {
   return Math.cos(angle) * hip;
 }
 
+/**
+ * Calculates the adjacent side of the given
+ * angle using the angle's opposite side
+ * @param {number} angle Angle in radians
+ * @param {number} opposite opposite side
+ * @returns {number} Length of the adjacent side
+ */
 export function getTangentLength(angle, opposite) {
   return opposite / Math.tan(angle) || 0;
 }
 
-export function getTangentNoHyp(angle, opposite) {
-  return opposite * Math.tan(angle);
+/**
+ * Calculates the opposite side of the given
+ * angle using the angle's adjacent side
+ * @param {number} angle Angle in radians
+ * @param {number} adjacent adjacent side
+ * @returns {number} Length of the opposite side
+ */
+export function getTangentNoHyp(angle, adjacent) {
+  return adjacent * Math.tan(angle);
 }
 
+/**
+ * Calculates the length that should be used to shorten the
+ * distance between commands based on the given radius value
+ * @param {number} angle Angle between points
+ * @param {number} r Radius of the arc that should fit inside the triangle
+ * @returns {any} Object containing offset and the arc's sweepFlag
+ */
 export function getOffset(angle, r) {
   let offset;
   let sweepFlag = 0;
   let degrees = angle * (180/Math.PI);
 
-  if ( (degrees < 0 && degrees > -90) || (degrees > 180 && degrees <= 270) || (degrees <= -90 && degrees > -180) ) { // sharp angles
+  // sharp angles
+  if (
+    (degrees < 0 && degrees > -90) ||
+    (degrees > 180 && degrees <= 270) ||
+    (degrees <= -90 && degrees > -180)
+  ) {
     offset = getTangentLength(angle/2, -r);
     sweepFlag = 0;
     if (offset === -Infinity || offset == 0) {
       offset = -r;
-    } 
-  } else { // obtuse angles
+    }
+  // obtuse angles
+  } else {
     offset = getTangentLength(angle/2, r );
     sweepFlag = 1;
     if (offset === Infinity) {
@@ -415,8 +469,9 @@ export function getOffset(angle, r) {
 }
 
 /**
- * http://bl.ocks.org/balint42/8c9310605df9305c42b3
+ * Originally taken from: http://bl.ocks.org/balint42/8c9310605df9305c42b3
  * @brief De Casteljau's algorithm splitting n-th degree Bezier curve
+ * @returns {array} 
  */
 export function bsplit(points, t0) {
   const n = points.length - 1; // number of control points
@@ -467,3 +522,47 @@ export function bsplit(points, t0) {
   
   return [res1, res2];
 };
+
+/**
+ * Concatenates commands in a string and ensures that each
+ * value from each command is printed in the right order
+ * @param {array} cmds Array of svg commands
+ * @returns {string} String containing all commands formated ready for the 'd' Attribute
+ */
+export function commandsToSvgPath(cmds) {
+  // when writing the commands back, the relevant values should be written in this order
+  const valuesOrder = [
+    'radiusX',
+    'radiusY',
+    'rotation',
+    'largeArc',
+    'sweep',
+    'x1',
+    'y1',
+    'x2',
+    'y2',
+    'x',
+    'y',
+  ];
+
+  return cmds
+    .map((cmd) => {
+      // defaults for empty string, so Z will output no values
+      let d = '';
+      // filter any command that's not Z
+      if (cmd.marker !== 'Z') {
+        // get all values from current command
+        const cmdKeys = Object.keys(cmd.values);
+        // filter the valuesOrder array for only the values that appear in the current command.
+        // We do this because valuesOrder guarantees that the relevant values will be in the right order
+        d = valuesOrder.filter(v => cmdKeys.indexOf(v) !== -1)
+          // replace the key with it's value
+          .map(key => cmd.values[key])
+          // and stringify everything together with a comma inbetween values
+          .join();
+      }
+      return `\n${cmd.marker} ${d}`;
+    })
+    .join(' ')
+    .trim();
+}
