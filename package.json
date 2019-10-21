@@ -6,7 +6,8 @@
   "module": "lib/index.js",
   "scripts": {
     "test": "jest",
-    "build": "webpack --config ./build/webpack.config.js --prod"
+    "start": "webpack-dev-server --open --config ./build/webpack.dev.js",
+    "build": "webpack --config ./build/webpack.common.js --prod"
   },
   "repository": {
     "type": "git",
@@ -29,9 +30,13 @@
     "@babel/cli": "^7.6.0",
     "@babel/core": "^7.6.0",
     "@babel/preset-env": "^7.6.0",
+    "clean-webpack-plugin": "^3.0.0",
+    "html-webpack-plugin": "^3.2.0",
     "jest": "^24.8.0",
     "webpack": "^4.41.2",
-    "webpack-cli": "^3.3.9"
+    "webpack-cli": "^3.3.9",
+    "webpack-dev-server": "^3.8.2",
+    "webpack-merge": "^4.2.2"
   },
   "dependencies": {}
 }
