@@ -27,9 +27,11 @@ const { parsePath, roundCommands, roundCorners } = require('svg-round-corners');
 parsePath(pathString)
 ```
 **Parameters**
+
 * pathString: String from the 'd' attribute of a <path> element.
 
 **Returns**
+
 Array containing parsed and normalised (absolute) commands.
 
 **Example**
@@ -54,6 +56,7 @@ parsePath(path);
 roundCommands(commandsArray, radius, round)
 ```
 **Parameters**
+
 * commandsArray: Parsed commands from a path element, from example the output of parsePath().
 * radius: Expected radius of the arcs in pixel values.
 * round (optional): Number of decimal digits to round each value inside commands. Defaults to false.
@@ -155,6 +158,7 @@ roundCommands([...parsePath(str)], 10, 2);
 ```
 
 **Parameters**
+
 * pathString: String from the 'd' attribute of a <path> element.
 * radius: Expected radius of the arcs in pixel values.
 * round (optional): Number of decimal digits to round each value inside commands. Defaults to false.
