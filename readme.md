@@ -23,6 +23,8 @@ const { parsePath, roundCommands, roundCorners } = require('svg-round-corners');
 
 ## API
 
+### parsePath()
+
 ```
 parsePath(pathString)
 ```
@@ -52,6 +54,7 @@ parsePath(path);
 */
 ```
 
+### roundCommands()
 ```
 roundCommands(commandsArray, radius, round)
 ```
@@ -146,6 +149,8 @@ roundCommands(cmds, 10, 2);
 }
 */
 ```
+
+### roundCorners()
 
 ```
 roundCorners(pathString, radius, round)
