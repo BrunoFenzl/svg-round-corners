@@ -7,7 +7,8 @@
   "scripts": {
     "test": "jest",
     "start": "webpack-dev-server --open --config ./build/webpack.dev.js",
-    "build": "webpack --config ./build/webpack.common.js --prod"
+    "demo": "webpack --config ./build/webpack.demo.js",
+    "build": "webpack --config ./build/webpack.prod.js"
   },
   "repository": {
     "type": "git",
@@ -29,14 +30,16 @@
   "devDependencies": {
     "@babel/cli": "^7.6.0",
     "@babel/core": "^7.6.0",
-    "@babel/preset-env": "^7.6.0",
+    "@babel/preset-env": "^7.6.3",
+    "babel-core": "^6.26.3",
+    "babel-loader": "^8.0.6",
+    "babel-preset-env": "^1.7.0",
     "clean-webpack-plugin": "^3.0.0",
+    "eslint": "^6.6.0",
+    "eslint-loader": "^3.0.2",
     "html-webpack-plugin": "^3.2.0",
-    "jest": "^24.8.0",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.9",
-    "webpack-dev-server": "^3.8.2",
-    "webpack-merge": "^4.2.2"
-  },
-  "dependencies": {}
+    "webpack-dev-server": "^3.8.2"
+  }
 }

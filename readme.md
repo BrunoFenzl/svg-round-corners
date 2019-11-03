@@ -7,7 +7,11 @@ I'm working on rounding corners between straight lines <--> beziér curves. Unfo
 
 ## Installing
 
-This library is not yet in NPM. It will be released soon! In the meanwhile, you can clone or download it and place it directy into your project.
+To use this library run `npm install svgRoundCorners` with your terminal of choice inside your project's root folder. When successfully installed, you should be able to import the library for example like this:
+
+```
+import { parsePath, roundCommands, roundCorners } from 'svgRoundCorners';
+```
 
 ## API
 

@@ -3,17 +3,18 @@ const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const path = require('path');
 
 module.exports = {
-  entry: './lib',
+  entry: './demo/main.js',
   output: {
-    path: path.resolve(__dirname, '../dist'),
+    path: path.resolve(__dirname, '../docs'),
     filename: 'svg-round-corners.js',
-    library: 'svgRoundCorners',
-    globalObject: 'typeof self !== \'undefined\' ? self : this',
-    libraryTarget: 'umd',
   },
-  mode: 'production',
+  mode: 'development',
+  devtool: 'inline-source-map',
   plugins: [
-    new CleanWebpackPlugin()
+    new CleanWebpackPlugin(),
+    new HtmlWebpackPlugin({
+      template: 'demo/index.html'
+    }),
   ],
   module: {
     rules: [
@@ -30,7 +31,7 @@ module.exports = {
           loader: 'babel-loader',
           options: {
             presets: [
-              'env'
+              '@babel/preset-env'
             ]
           }
         }
