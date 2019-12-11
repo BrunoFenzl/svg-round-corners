@@ -1,0 +1,21 @@
+OK getAngle
+OK getDistance
+OK getOppositeLength
+OK getAdjacentLength
+OK getTangentLength
+OK getTangentNoHyp
+OK mod
+OK roundValues
+DOING getOffset
+
+getPreviousNoZ
+getNextNoZ
+convertToAbsolute
+newCommands
+markOverlapped
+reverseMarkOverlapped
+shortestSide
+
+bsplit
+
+commandsToSvgPath
