@@ -6,16 +6,18 @@ OK getTangentLength
 OK getTangentNoHyp
 OK mod
 OK roundValues
+OK parsePath
+OK roundCorners
+OK roundCommands
+OK getPreviousNoZ
+OK getNextNoZ
+OK convertToAbsolute
+OK markOverlapped
+OK reverseMarkOverlapped
+
 DOING getOffset
-
-getPreviousNoZ
-getNextNoZ
-convertToAbsolute
 newCommands
-markOverlapped
-reverseMarkOverlapped
 shortestSide
-
 bsplit
-
 commandsToSvgPath
+
