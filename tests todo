@@ -7,9 +7,11 @@ OK getTangentNoHyp
 OK mod
 OK roundValues
 DOING getOffset
-
-getPreviousNoZ
-getNextNoZ
+OK parsePath
+OK roundCorners
+OK roundCommands
+OK getPreviousNoZ
+OK getNextNoZ
 convertToAbsolute
 newCommands
 markOverlapped
@@ -19,3 +21,4 @@ shortestSide
 bsplit
 
 commandsToSvgPath
+

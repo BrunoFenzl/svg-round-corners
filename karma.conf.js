@@ -5,11 +5,11 @@ module.exports = function(config) {
     frameworks: ['jasmine'],
 
     files: [
-      'lib/*.spec.js'
+      'tests/*.spec.js'
     ],
 
     preprocessors: {
-      'lib/*.spec.js': ['webpack', 'sourcemap', 'coverage']
+      'tests/*.spec.js': ['webpack', 'sourcemap', 'coverage']
     },
 
     webpack: webpackConfig,
@@ -24,6 +24,6 @@ module.exports = function(config) {
       ]
     },
 
-    browsers: ['ChromeHeadless'],
+    browsers: ['Chrome'],
   })
 }
