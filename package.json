@@ -1,6 +1,6 @@
 {
   "name": "svg-round-corners",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "A small library for rounding corners",
   "main": "dist/svg-round-corners.js",
   "module": "lib/index.js",
