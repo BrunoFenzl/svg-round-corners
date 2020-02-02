@@ -128,14 +128,6 @@ class SVGPreview {
   }
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => {
-    new SVGPreview("svg", "path");
-  });
-} else {
-  new SVGPreview("svg", "path");
-}
-
 // Component responsible for controlling the radius
 class RangeSlider extends EventTarget {
   constructor(containerSelector, options) {
@@ -261,4 +253,12 @@ class RangeSlider extends EventTarget {
     document.removeEventListener("mousemove", this.docMouseMove);
     document.removeEventListener("mouseup", this.docMouseUp);
   }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
+    new SVGPreview("svg", "path");
+  });
+} else {
+  new SVGPreview("svg", "path");
 }
