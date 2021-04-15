@@ -1,12 +1,12 @@
-import { roundCorners, parsePath } from "../lib";
+import { roundCorners, parsePath } from '../lib';
 import {
   getDistance,
   getAngle,
   getAdjacentLength,
   getOppositeLength
-} from "../lib/utils";
+} from '../lib/utils';
 
-const svgns = "http://www.w3.org/2000/svg";
+const svgns = 'http://www.w3.org/2000/svg';
 
 class SVGPreview {
   constructor(stageSelector, pathSelector) {
@@ -23,19 +23,19 @@ class SVGPreview {
     this.rangeSlider = this.rangeSlider;
 
     // Set the svg stage to be the same size of the window
-    this.stage.setAttribute("width", window.innerWidth);
-    this.stage.setAttribute("height", window.innerHeight);
+    this.stage.setAttribute('width', window.innerWidth);
+    this.stage.setAttribute('height', window.innerHeight);
 
     // create clone path to show the difference between original
     // and path with rounded corners.
     this.clone = this.path.cloneNode();
-    this.clone.classList.add("original");
-    this.path.insertAdjacentElement("beforebegin", this.clone);
+    this.clone.classList.add('original');
+    this.path.insertAdjacentElement('beforebegin', this.clone);
 
-    this.rangeSlider = new RangeSlider(".controller", {});
-    this.rangeSlider.addEventListener("update", evt => {
+    this.rangeSlider = new RangeSlider('.controller', {});
+    this.rangeSlider.addEventListener('update', evt => {
       this.radius = evt.detail;
-      this.updatePath();
+      this.updatePath(evt.metaKey);
     });
 
     // bind event listeners to this class context
@@ -44,26 +44,26 @@ class SVGPreview {
     this.stageMouseUp = this.stageMouseUp.bind(this);
     this.stageClick = this.stageClick.bind(this);
 
-    this.stage.addEventListener("click", this.stageClick);
+    this.stage.addEventListener('click', this.stageClick);
   }
 
-  updatePath() {
+  updatePath(closedPath) {
     // build the string
     const d =
       this.commands.reduce(
         (acc, curr) =>
           (acc += `${curr.marker}${curr.values.x},${curr.values.y}`),
-        ""
-      ) + "Z";
+        ''
+      ) + (closedPath ? 'Z' : '');
 
     // update the path's
-    this.path.setAttribute("d", d);
-    this.path.setAttribute("data-original-d", d);
-    this.clone.setAttribute("d", d);
+    this.path.setAttribute('d', d);
+    this.path.setAttribute('data-original-d', d);
+    this.clone.setAttribute('d', d);
 
     // round the corners
     const rCorners = roundCorners(d, this.radius);
-    this.path.setAttribute("d", rCorners.path);
+    this.path.setAttribute('d', rCorners.path);
   }
 
   dotMouseDown(evt) {
@@ -74,16 +74,16 @@ class SVGPreview {
         evt.clientX -
         this.stageOffset.left +
         this.dotRadius -
-        dot.getAttributeNS(null, "cx"),
+        dot.getAttributeNS(null, 'cx'),
       y:
         evt.clientY -
         this.stageOffset.top +
         this.dotRadius -
-        dot.getAttributeNS(null, "cy")
+        dot.getAttributeNS(null, 'cy')
     };
 
-    this.stage.addEventListener("mousemove", this.stageMouseMove);
-    this.stage.addEventListener("mouseup", this.stageMouseUp);
+    this.stage.addEventListener('mousemove', this.stageMouseMove);
+    this.stage.addEventListener('mouseup', this.stageMouseUp);
   }
 
   stageMouseMove(evt) {
@@ -91,26 +91,27 @@ class SVGPreview {
     const pathCmd = this.commands[this.activeDotIndex].values;
     pathCmd.x = evt.clientX - this.mouseDownOffset.x;
     pathCmd.y = evt.clientY - this.mouseDownOffset.y;
-    this.updatePath();
 
-    dot.setAttributeNS(null, "cx", pathCmd.x);
-    dot.setAttributeNS(null, "cy", pathCmd.y);
+    this.updatePath(evt.metaKey);
+
+    dot.setAttributeNS(null, 'cx', pathCmd.x);
+    dot.setAttributeNS(null, 'cy', pathCmd.y);
   }
 
   stageMouseUp(evt) {
     // Cleanup
-    this.stage.removeEventListener("mousemove", this.stageMouseMove);
-    this.stage.removeEventListener("mouseup", this.stageMouseUp);
+    this.stage.removeEventListener('mousemove', this.stageMouseMove);
+    this.stage.removeEventListener('mouseup', this.stageMouseUp);
   }
 
   newDot(x, y) {
-    const dot = document.createElementNS(svgns, "circle");
-    dot.setAttributeNS(null, "cx", x);
-    dot.setAttributeNS(null, "cy", y);
-    dot.setAttributeNS(null, "r", this.dotRadius);
+    const dot = document.createElementNS(svgns, 'circle');
+    dot.setAttributeNS(null, 'cx', x);
+    dot.setAttributeNS(null, 'cy', y);
+    dot.setAttributeNS(null, 'r', this.dotRadius);
     this.stage.appendChild(dot);
 
-    dot.addEventListener("mousedown", this.dotMouseDown.bind(this));
+    dot.addEventListener('mousedown', this.dotMouseDown.bind(this));
 
     return dot;
   }
@@ -119,12 +120,12 @@ class SVGPreview {
     // if dragging
     if (evt.shiftKey) return;
 
-    const marker = this.commands.length ? "L" : "M";
+    const marker = this.commands.length ? 'L' : 'M';
     const x = evt.clientX - this.stageOffset.left;
     const y = evt.clientY - this.stageOffset.top;
     this.commands.push({ marker, values: { x, y } });
     this.dots.push(this.newDot(x, y));
-    this.updatePath();
+    this.updatePath(evt.metaKey);
   }
 }
 
@@ -180,10 +181,10 @@ class RangeSlider extends EventTarget {
     container.appendChild(documentFragment);
 
     // Get references to the parts we need
-    this.stage = document.querySelector(".radius-control");
-    this.circle = document.querySelector(".radius-control__circle");
-    this.line = document.querySelector(".radius-control__line");
-    this.handle = document.querySelector(".radius-control__handle");
+    this.stage = document.querySelector('.radius-control');
+    this.circle = document.querySelector('.radius-control__circle');
+    this.line = document.querySelector('.radius-control__line');
+    this.handle = document.querySelector('.radius-control__handle');
 
     this.stageOffset = this.stage.getBoundingClientRect();
 
@@ -192,7 +193,7 @@ class RangeSlider extends EventTarget {
     this.docMouseUp = this.docMouseUp.bind(this);
     this.handleMouseDown = this.handleMouseDown.bind(this);
 
-    this.handle.addEventListener("mousedown", this.handleMouseDown);
+    this.handle.addEventListener('mousedown', this.handleMouseDown);
   }
 
   handleMouseDown(evt) {
@@ -202,16 +203,16 @@ class RangeSlider extends EventTarget {
         evt.clientX -
         this.stageOffset.x +
         this.options.handleRadius -
-        this.handle.getAttributeNS(null, "cx"),
+        this.handle.getAttributeNS(null, 'cx'),
       y:
         evt.clientY -
         this.stageOffset.y +
         this.options.handleRadius -
-        this.handle.getAttributeNS(null, "cy")
+        this.handle.getAttributeNS(null, 'cy')
     };
 
-    document.addEventListener("mousemove", this.docMouseMove);
-    document.addEventListener("mouseup", this.docMouseUp);
+    document.addEventListener('mousemove', this.docMouseMove);
+    document.addEventListener('mouseup', this.docMouseUp);
   }
 
   docMouseMove(evt) {
@@ -236,29 +237,29 @@ class RangeSlider extends EventTarget {
     const maxX = -Math.sin(angle) * distance + this.options.size / 2;
     const maxY = -Math.cos(angle) * distance + this.options.size / 2;
 
-    this.handle.setAttributeNS(null, "cx", maxX);
-    this.handle.setAttributeNS(null, "cy", maxY);
+    this.handle.setAttributeNS(null, 'cx', maxX);
+    this.handle.setAttributeNS(null, 'cy', maxY);
 
-    this.circle.setAttribute("r", distance);
-    this.line.setAttribute("x2", maxX);
-    this.line.setAttribute("y2", maxY);
+    this.circle.setAttribute('r', distance);
+    this.line.setAttribute('x2', maxX);
+    this.line.setAttribute('y2', maxY);
 
     // Dispatch custom Event
-    const event = new CustomEvent("update", { detail: distance });
+    const event = new CustomEvent('update', { detail: distance });
     this.dispatchEvent(event);
   }
 
   docMouseUp() {
     // Cleanup
-    document.removeEventListener("mousemove", this.docMouseMove);
-    document.removeEventListener("mouseup", this.docMouseUp);
+    document.removeEventListener('mousemove', this.docMouseMove);
+    document.removeEventListener('mouseup', this.docMouseUp);
   }
 }
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => {
-    new SVGPreview("svg", "path");
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    new SVGPreview('svg', 'path');
   });
 } else {
-  new SVGPreview("svg", "path");
+  new SVGPreview('svg', 'path');
 }
