@@ -10,7 +10,7 @@
     "start": "webpack-dev-server --open --config ./build/webpack.dev.js",
     "demo": "webpack --config ./build/webpack.demo.js",
     "build": "webpack --config ./build/webpack.prod.js",
-    "prepublishOnly": "yarn test && yarn build"
+    "prepublishOnly": "npm test && npm run build"
   },
   "repository": {
     "type": "git",
