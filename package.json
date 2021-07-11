@@ -1,18 +1,20 @@
 {
-  "name": "svg-round-corners",
+  "name": "@twixes/svg-round-corners",
   "version": "0.1.1",
   "description": "A small library for rounding corners",
   "main": "dist/svg-round-corners.js",
+  "types": "types.d.ts",
   "module": "lib/index.js",
   "scripts": {
-    "test": "karma start karma.conf.js",
+    "test": "karma start karma.conf.js --single-run",
     "start": "webpack-dev-server --open --config ./build/webpack.dev.js",
     "demo": "webpack --config ./build/webpack.demo.js",
-    "build": "webpack --config ./build/webpack.prod.js"
+    "build": "webpack --config ./build/webpack.prod.js",
+    "prepublishOnly": "yarn test && yarn build"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/BrunoFenzl/svg-round-corners.git"
+    "url": "git+https://github.com/Twixes/svg-round-corners.git"
   },
   "keywords": [
     "svg",
@@ -23,9 +25,9 @@
   "author": "Bruno Fenzl",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/BrunoFenzl/svg-round-corners/issues"
+    "url": "https://github.com/Twixes/svg-round-corners/issues"
   },
-  "homepage": "https://github.com/BrunoFenzl/svg-round-corners#readme",
+  "homepage": "https://github.com/Twixes/svg-round-corners#readme",
   "browserslist": "> 0.25%, not dead",
   "devDependencies": {
     "@babel/cli": "^7.13.14",
