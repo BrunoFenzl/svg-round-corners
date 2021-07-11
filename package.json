@@ -1,5 +1,5 @@
 {
-  "name": "@twixes/svg-round-corners",
+  "name": "svg-round-corners",
   "version": "0.1.1",
   "description": "A small library for rounding corners",
   "main": "dist/svg-round-corners.js",
@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Twixes/svg-round-corners.git"
+    "url": "git+https://github.com/BrunoFenzl/svg-round-corners.git"
   },
   "keywords": [
     "svg",
@@ -25,9 +25,9 @@
   "author": "Bruno Fenzl",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Twixes/svg-round-corners/issues"
+    "url": "https://github.com/BrunoFenzl/svg-round-corners/issues"
   },
-  "homepage": "https://github.com/Twixes/svg-round-corners#readme",
+  "homepage": "https://github.com/BrunoFenzl/svg-round-corners#readme",
   "browserslist": "> 0.25%, not dead",
   "devDependencies": {
     "@babel/cli": "^7.13.14",
