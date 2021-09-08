@@ -9,7 +9,7 @@ An interactive example can be found at [brunofenzl.github.io/svg-round-corners/]
 
 ## Installing
 
-To use this library, run `npm install svgRoundCorners` with your terminal of choice inside your project's root folder. When successfully installed, you should be able to import the library like this:
+To use this library, run `npm install svg-round-corners` with your terminal of choice inside your project's root folder. When successfully installed, you should be able to import the library like this:
 
 ```
 import { parsePath, roundCommands, roundCorners } from 'svgRoundCorners';
