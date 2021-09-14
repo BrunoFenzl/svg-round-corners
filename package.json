@@ -1,14 +1,16 @@
 {
   "name": "svg-round-corners",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "A small library for rounding corners",
   "main": "dist/svg-round-corners.js",
+  "types": "types.d.ts",
   "module": "lib/index.js",
   "scripts": {
-    "test": "karma start karma.conf.js",
+    "test": "karma start karma.conf.js --single-run",
     "start": "webpack-dev-server --open --config ./build/webpack.dev.js",
     "demo": "webpack --config ./build/webpack.demo.js",
-    "build": "webpack --config ./build/webpack.prod.js"
+    "build": "webpack --config ./build/webpack.prod.js",
+    "prepublishOnly": "npm test && npm run build"
   },
   "repository": {
     "type": "git",
