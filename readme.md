@@ -11,13 +11,13 @@ An interactive example can be found at [brunofenzl.github.io/svg-round-corners/]
 
 To use this library, run `npm install svg-round-corners` with your terminal of choice inside your project's root folder. When successfully installed, you should be able to import the library like this:
 
-```
-import { parsePath, roundCommands, roundCorners } from 'svgRoundCorners';
+```js
+import { parsePath, roundCommands, roundCorners } from 'svg-round-corners';
 ```
 
 or as a CommonJS module:
 
-```
+```js
 const { parsePath, roundCommands, roundCorners } = require('svg-round-corners');
 ```
 
@@ -37,7 +37,7 @@ parsePath(pathString)
 Array containing parsed and normalised (absolute) commands.
 
 **Example**
-```
+```js
 const { parsePath } = require('svg-round-corners');
 const path = 'm216.1042,78.4l0,49.49112l49.21308,0l0,-49.49112l-49.21308,0z';
 parsePath(path);
@@ -68,7 +68,7 @@ roundCommands(commandsArray, radius, round)
 Object containing transformed path as a string and an array with all commands
 
 **Example**
-```
+```js
 const { roundCommands } = require('svg-round-corners');
 const cmds = [
   { marker: 'M', values: { x: 216.1, y: 78.4 } },
@@ -172,7 +172,7 @@ roundCommands([...parsePath(str)], 10, 2);
 String containing parsed and normalised (absolute) commands.
 
 **Example**
-```
+```js
 const { roundCorners } = require('svg-round-corners');
 const path = 'm216.1042,78.4l0,49.49112l49.21308,0l0,-49.49112l-49.21308,0z';
 roundCorners(path, 10, 2);
