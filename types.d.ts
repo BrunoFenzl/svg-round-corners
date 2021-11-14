@@ -31,4 +31,4 @@ export function roundCommands(cmds: SVGCommand[], r: number, round?: number): { 
  * @param {number} round Number of decimal digits to round values
  * @returns {string} New commands sequence with rounded corners
  */
-export function roundCorners(str: string, r: number, round?: number): string
+export function roundCorners(str: string, r: number, round?: number): { path: string; commands: SVGCommand[] }
