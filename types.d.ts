@@ -19,7 +19,7 @@ export function parsePath(str: string): SVGCommand[]
  * @param {array} _cmds Array with commands to be modified
  * @param {number} r Expected radius of the arcs.
  * @param {number} round Number of decimal digits to round values
- * @returns {array} Sequence of commands containing arcs in place or corners
+ * @returns {array} Sequence of commands containing arcs in place of corners
  */
 export function roundCommands(cmds: SVGCommand[], r: number, round?: number): { path: string; commands: SVGCommand[] }
 
@@ -29,6 +29,6 @@ export function roundCommands(cmds: SVGCommand[], r: number, round?: number): { 
  * @param {string} str Raw string with commands from the path element
  * @param {number} r Expected radius of the arcs.
  * @param {number} round Number of decimal digits to round values
- * @returns {string} New commands sequence with rounded corners
+ * @returns {array} New commands sequence with rounded corners
  */
 export function roundCorners(str: string, r: number, round?: number): { path: string; commands: SVGCommand[] }
