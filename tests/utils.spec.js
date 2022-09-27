@@ -61,7 +61,11 @@ describe('utils', function() {
   it('getTangentLength(); Adjacent side should be equal opposite when angle = 0', () => {
     expect(getTangentLength(0, 100)).toBe(100); // 0° 0° 0°
   });
-  
+
+  it('getTangentLength(); Opposite equaling 0 should be 0', () => {
+    expect(getTangentLength(0, 0)).toBe(0); // 0° 0° 0°
+  });
+
   it('getTangentNoHyp(); Math.tan 45° 45° 90°', () => {
     expect(getTangentNoHyp(Math.PI / 4, 5)).toBeCloseTo(5);
   });

@@ -20,6 +20,11 @@ describe('index', () => {
     expect(roundCommands(c, 10)).toEqual(r);
   });
 
+  it('roundCommands(): should not crash with straight lines', () => {
+    const c = cloneDeep(v.badLine);
+    expect(roundCommands(c, 50).path).not.toContain('NaN');
+  });
+
   it('roundCorners(): it should parse "d" string and add rounded corners', () => {
     expect(roundCorners(v.rawRelativeSquare, 20).path).toBe(v.computedSquare);
   });
