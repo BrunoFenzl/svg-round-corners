@@ -1,12 +1,11 @@
-var webpackConfig = require('./build/webpack.prod.js')
+var webpackConfig = require('./build/webpack.prod.js');
+webpackConfig.mode = 'development';
 
-module.exports = function(config) {
+module.exports = function (config) {
   config.set({
     frameworks: ['jasmine'],
 
-    files: [
-      'tests/*.spec.js'
-    ],
+    files: ['tests/*.spec.js'],
 
     preprocessors: {
       'tests/*.spec.js': ['webpack', 'sourcemap', 'coverage']
@@ -18,12 +17,9 @@ module.exports = function(config) {
 
     coverageReporter: {
       dir: './coverage',
-      reporters: [
-        { type: 'lcov', subdir: '.' },
-        { type: 'text-summary' }
-      ]
+      reporters: [{ type: 'lcov', subdir: '.' }, { type: 'text-summary' }]
     },
 
-    browsers: ['Chrome'],
-  })
-}
+    browsers: ['Chrome']
+  });
+};

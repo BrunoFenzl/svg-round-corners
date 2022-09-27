@@ -12,14 +12,14 @@ import {
   getNextNoZ,
   convertToAbsolute,
   markOverlapped,
-  reverseMarkOverlapped,
-} from "../lib/utils.js";
+  reverseMarkOverlapped
+} from '../lib/utils.js';
 
 import cloneDeep from 'lodash.clonedeep';
 
 import * as v from './variables';
 
-describe('utils', function() {
+describe('utils', function () {
   it('getAngle(): Should get the angle between two points', () => {
     const p1 = { x: 10, y: 0 };
     const p2 = { x: 0, y: 10 };
@@ -45,7 +45,7 @@ describe('utils', function() {
   it('getOppositeLength(); Opposite side should be zero if angle is 0', () => {
     expect(getOppositeLength(0, 100)).toBe(0); // 0° 0° 0°
   });
-  
+
   it('getAdjacentLength(); Math.cos 45° 45° 90°', () => {
     expect(getAdjacentLength(Math.PI / 4, 5 * Math.sqrt(2))).toBeCloseTo(5); // 45° 45° 90°
   });
@@ -75,7 +75,10 @@ describe('utils', function() {
   });
 
   it('getOffset(); angle = 45°, radius = 10', () => {
-    expect(getOffset(Math.PI / 4, 10)).toEqual({ offset: 24.14213562373095, sweepFlag: 1 });
+    expect(getOffset(Math.PI / 4, 10)).toEqual({
+      offset: 24.14213562373095,
+      sweepFlag: 1
+    });
   });
 
   // it('getOffset(); angle = -90°, radius = 35', () => {
@@ -112,16 +115,16 @@ describe('utils', function() {
     const o = {
       values: {
         x: 10.001,
-        x: -2,
-        someProp: 16.8696690098698,
+        y: -2,
+        someProp: 16.8696690098698
       }
     };
 
     const rounded = {
       values: {
         x: 10,
-        x: -2,
-        someProp: 16.87,
+        y: -2,
+        someProp: 16.87
       }
     };
     expect(roundValues(o, 2)).toEqual(rounded);
@@ -149,7 +152,7 @@ describe('utils', function() {
       if (el.marker === 'h' || el.marker === 'v') {
         expect(e.marker).toBe('L');
       }
-    })
+    });
   });
 
   it('markOverlapped(): should add the property "overlap" to adjacent commands with the identical coordinates', () => {
@@ -162,7 +165,6 @@ describe('utils', function() {
   it('reverseMarkOverlapped(): ', () => {
     const cs = cloneDeep(v.overlapped);
     reverseMarkOverlapped(cs, 2);
-    console.log(JSON.stringify(cs));
     expect(cs[0].overlap).toBe(undefined);
     expect(cs[1].overlap).toBe(true);
     expect(cs[2].overlap).toBe(true);
