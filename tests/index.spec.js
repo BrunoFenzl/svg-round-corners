@@ -9,7 +9,7 @@ import cloneDeep from 'lodash.clonedeep';
 import * as v from './variables';
 
 describe('index', () => {
-  it('parsePath(): It should parse the square', function() {
+  it('parsePath(): It should parse the square', function () {
     const c = cloneDeep(v.squareCommands);
     expect(parsePath(v.rawRelativeSquare)).toEqual(c);
   });
@@ -22,5 +22,6 @@ describe('index', () => {
 
   it('roundCorners(): it should parse "d" string and add rounded corners', () => {
     expect(roundCorners(v.rawRelativeSquare, 20).path).toBe(v.computedSquare);
+    expect(roundCorners(v.rawSegments, 20).path).toBe(v.roundedSegments);
   });
 });
