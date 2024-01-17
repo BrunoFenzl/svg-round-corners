@@ -1,10 +1,5 @@
-import { roundCorners, parsePath } from '../lib';
-import {
-  getDistance,
-  getAngle,
-  getAdjacentLength,
-  getOppositeLength
-} from '../lib/utils';
+import { roundCorners } from '../lib';
+import { getAngle, getDistance } from '../lib/utils';
 
 const svgns = 'http://www.w3.org/2000/svg';
 
@@ -20,7 +15,7 @@ class SVGPreview {
     this.stage = document.querySelector(stageSelector);
     this.stageOffset = this.stage.getBoundingClientRect();
     this.path = document.querySelector(pathSelector);
-    this.rangeSlider = this.rangeSlider;
+    // this.rangeSlider = this.rangeSlider;
 
     // Set the svg stage to be the same size of the window
     this.stage.setAttribute('width', window.innerWidth);
@@ -98,7 +93,7 @@ class SVGPreview {
     dot.setAttributeNS(null, 'cy', pathCmd.y);
   }
 
-  stageMouseUp(evt) {
+  stageMouseUp() {
     // Cleanup
     this.stage.removeEventListener('mousemove', this.stageMouseMove);
     this.stage.removeEventListener('mouseup', this.stageMouseUp);
