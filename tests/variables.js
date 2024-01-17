@@ -213,8 +213,88 @@ const overlapped = [
       x: 216.1042,
       y: 78.4
     }
+  }
+];
+
+const badLine = [
+  {
+    marker: 'M',
+    values: {
+      x: 0,
+      y: 0
+    }
   },
-]
+  {
+    marker: 'L',
+    values: {
+      x: 61.599999999999994,
+      y: 0
+    }
+  },
+  {
+    marker: 'L',
+    values: {
+      x: 61.599999999999994,
+      y: -2.8
+    }
+  },
+  {
+    marker: 'L',
+    values: {
+      x: 267.4,
+      y: -2.8
+    }
+  },
+  {
+    marker: 'L',
+    values: {
+      x: 466.2,
+      y: -2.8
+    }
+  },
+  {
+    marker: 'L',
+    values: {
+      x: 466.2,
+      y: 25.586567164179062
+    }
+  },
+  {
+    marker: 'L',
+    values: {
+      x: 659.4,
+      y: 25.586567164179062
+    }
+  },
+  {
+    marker: 'L',
+    values: {
+      x: 690.1999999999999,
+      y: 25.586567164179062
+    }
+  },
+  {
+    marker: 'L',
+    values: {
+      x: 690.1999999999999,
+      y: 165.2
+    }
+  },
+  {
+    marker: 'L',
+    values: {
+      x: 660.0999999999999,
+      y: 165.2
+    }
+  },
+  {
+    marker: 'L',
+    values: {
+      x: 910.3499999999999,
+      y: 165.2
+    }
+  }
+];
 
 const rawSegments = `M293,82 L313,82 L313,291 L288,291 L288,311`;
 
@@ -230,5 +310,6 @@ export {
   relativeCommandsHV,
   overlapped,
   rawSegments,
-  roundedSegments
-}
+  roundedSegments,
+  badLine
+};
