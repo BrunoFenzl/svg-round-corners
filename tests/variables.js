@@ -1,5 +1,6 @@
 // square with all relative coordinates
-const rawRelativeSquare = 'm216.1042,78.4l0,49.49112l49.21308,0l0,-49.49112l-49.21308,0z';
+const rawRelativeSquare =
+  'm216.1042,78.4l0,49.49112l49.21308,0l0,-49.49112l-49.21308,0z';
 
 const squareCommands = [
   {
@@ -295,6 +296,10 @@ const badLine = [
   }
 ];
 
+const rawSegments = `M293,82 L313,82 L313,291 L288,291 L288,311`;
+
+const roundedSegments = `M293,82L303,82A10,10,90,0,1,313,92L313,278.5A12.5,12.5,-270,0,1,300.5,291L298,291A10,10,-90,0,0,288,301L288,311`;
+
 export {
   rawRelativeSquare,
   squareCommands,
@@ -304,5 +309,7 @@ export {
   relativeCommands,
   relativeCommandsHV,
   overlapped,
+  rawSegments,
+  roundedSegments,
   badLine
 };

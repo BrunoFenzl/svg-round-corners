@@ -21,5 +21,6 @@ describe('index', () => {
 
   it('roundCorners(): it should parse "d" string and add rounded corners', () => {
     expect(roundCorners(v.rawRelativeSquare, 20).path).toBe(v.computedSquare);
+    expect(roundCorners(v.rawSegments, 20).path).toBe(v.roundedSegments);
   });
 });
