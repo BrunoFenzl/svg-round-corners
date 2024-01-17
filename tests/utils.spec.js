@@ -15,8 +15,6 @@ import {
   reverseMarkOverlapped
 } from '../lib/utils.js';
 
-import cloneDeep from 'lodash.clonedeep';
-
 import * as v from './variables';
 
 describe('utils', function () {
@@ -131,19 +129,19 @@ describe('utils', function () {
   });
 
   it('getPreviousNoZ(): should get the previous command that\'s not a "Z"', () => {
-    const cs = cloneDeep(v.squareCommands);
+    const cs = [...v.squareCommands];
     expect(getPreviousNoZ(cs[0], 0, cs)).toEqual(cs[4]);
     expect(getPreviousNoZ(cs[2], 2, cs)).toEqual(cs[1]);
   });
 
   it('getNextNoZ(): should get the previous command that\'s not a "Z"', () => {
-    const cs = cloneDeep(v.squareCommands);
+    const cs = [...v.squareCommands];
     expect(getNextNoZ(cs[0], 0, cs)).toEqual(cs[1]);
     expect(getNextNoZ(cs[4], 5, cs)).toEqual(cs[0]);
   });
 
   it('convertToAbsolute(): convert all commands to absolute coordinates', () => {
-    const cs = cloneDeep(v.relativeCommands);
+    const cs = [...v.relativeCommands];
 
     cs.forEach((el, i, arr) => {
       const e = convertToAbsolute(el, i, arr);
@@ -156,14 +154,14 @@ describe('utils', function () {
   });
 
   it('markOverlapped(): should add the property "overlap" to adjacent commands with the identical coordinates', () => {
-    const cs = cloneDeep(v.overlapped).map(markOverlapped);
+    const cs = [...v.overlapped].map(markOverlapped);
     expect(cs[0].overlap).toBe(undefined);
     expect(cs[1].overlap).toBe(true);
     expect(cs[2].overlap).toBe(true);
   });
 
   it('reverseMarkOverlapped(): ', () => {
-    const cs = cloneDeep(v.overlapped);
+    const cs = [...v.overlapped];
     reverseMarkOverlapped(cs, 2);
     expect(cs[0].overlap).toBe(undefined);
     expect(cs[1].overlap).toBe(true);
